@@ -27,6 +27,12 @@ module.exports = {
     voiceLogChannelId: process.env.VOICE_LOG_CHANNEL_ID,
     messageLogChannelId: process.env.MESSAGE_LOG_CHANNEL_ID,
 
+    //LFP LFT Configurations
+    lfpLftSystem: true,
+    valoReviewChannelId: process.env.VALO_LF_REVIEW_CHANNEL_ID,
+    valolfpLftChannelId: process.env.VALO_LFP_LFT_CHANNEL_ID,
+
+
     // Bot admins and developers
     developers: [
         {

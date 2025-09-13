@@ -23,12 +23,12 @@ class ModalCreate extends Event {
       if (interaction.replied) {
         await interaction.editReply({
           content: "Catch an error while running this command.",
-          flags: MessageFlags.EPHEMERAL,
+          flags: MessageFlags.Ephemeral,
         });
       } else {
         await interaction.reply({
           content: "Catch an error while running this command.",
-          flags: MessageFlags.EPHEMERAL,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }

@@ -9,14 +9,15 @@ class RoleCreateLogs extends Event {
             name: Events.GuildRoleCreate,
         });
     }
-    async execute(oldRole, newRole) {
+    async execute(role) {
         const { client } = this;
         const logManager = client.logManager;
         if (client.config.logging !== true) return;
 
         try {
             // Get who made the change from audit logs
-            const auditEntry = await logManager.getAuditLogEntry(newRole.guild, AuditLogEvent.RoleCreate, newRole.id);
+            const auditEntry = await logManager.getAuditLogEntry(role.guild, AuditLogEvent.RoleCreate, role.id);
+
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
                 if (auditEntry) {
@@ -27,24 +28,24 @@ class RoleCreateLogs extends Event {
                 }
                 return embed;
             };
+
             // ---------------- ROLE CREATE ----------------
             const embed = logManager.createLogEmbed(
                 "ROLE_CREATE",
                 0x57f287,
                 "**New role created**",
-                `>>> **Role**: ${newRole} (\`${newRole.id}\`)\n` +
-                `**Name**: ${newRole.name}\n` +
-                `**Color**: ${newRole.hexColor}\n` +
-                `**Permissions**: \`${newRole.permissions.toArray().join(", ") || "None"}\``
+                `>>> **Role**: ${role} (\`${role.id}\`)\n` +
+                `**Name**: ${role.name}\n` +
+                `**Color**: ${role.hexColor}\n` +
+                `**Permissions**: \`${role.permissions.toArray().join(", ") || "None"}\``
             );
             setExecutorFooter(embed);
             await logManager.sendLog("serverLog", embed);
-            return;
         } catch (error) {
-            logger.error("RoleCreateLogs Event Error:", error);
+            logger.error(error);
         }
-
     }
+
 }
 
 module.exports = RoleCreateLogs;

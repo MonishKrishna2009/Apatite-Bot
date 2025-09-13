@@ -3,20 +3,22 @@ const { Logger } = require("../../Structure/Functions/index.js");
 const { Events, AuditLogEvent } = require("discord.js");
 const logger = new Logger();
 
-class RoleDeletelogs extends Event {
+class RoleDeleteLogs extends Event {
     constructor(client) {
         super(client, {
             name: Events.GuildRoleDelete,
         });
     }
-    async execute(oldRole, newRole) {
+
+    async execute(role) {
         const { client } = this;
         const logManager = client.logManager;
         if (client.config.logging !== true) return;
 
         try {
-            // Get who made the change from audit logs
-            const auditEntry = await logManager.getAuditLogEntry(oldRole.guild, AuditLogEvent.RoleDelete, oldRole.id);
+            // Get who deleted the role from audit logs
+            const auditEntry = await logManager.getAuditLogEntry(role.guild, AuditLogEvent.RoleDelete, role.id);
+
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
                 if (auditEntry) {
@@ -27,20 +29,24 @@ class RoleDeletelogs extends Event {
                 }
                 return embed;
             };
+
             // ---------------- ROLE DELETE ----------------
             const embed = logManager.createLogEmbed(
                 "ROLE_DELETE",
                 0xed4245,
                 "**Role deleted**",
-                `>>> **Role**: \`${oldRole.name}\` (\`${oldRole.id}\`)\n` +
-                `**Color**: ${oldRole.hexColor}\n` +
-                `**Permissions**: \`${oldRole.permissions.toArray().join(", ") || "None"}\``
+                `>>> **Name**: \`${role.name}\`\n` +
+                `**ID**: \`${role.id}\`\n` +
+                `**Color**: ${role.hexColor}\n` +
+                `**Permissions**: \`${role.permissions.toArray().join(", ") || "None"}\``
             );
+
             setExecutorFooter(embed);
             await logManager.sendLog("serverLog", embed);
-            return;
         } catch (error) {
-            logger.error("RoleDeleteLogs Event Error:", error);
+            logger.error(error);
         }
     }
 }
+
+module.exports = RoleDeleteLogs;

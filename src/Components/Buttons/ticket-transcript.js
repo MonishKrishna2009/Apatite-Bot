@@ -75,16 +75,24 @@ class TickTransButton extends Component {
             .setTimestamp();
         await interaction.editReply({ embeds: [successEmbed] });
 
-        const logChannel =  guild.channels.cache.get(config.ticketTranscriptChannelId);
+        const logChannel = guild.channels.cache.get(config.ticketTranscriptChannelId);
         if (logChannel) {
-            const logEmbed = new EmbedBuilder()
-                .setColor(Colors.Blue)
-                .setDescription(`Transcript for ticket: ${channel.name}`)
-                .setFooter({ text: "Ticket System", iconURL: guild.iconURL() })
-                .setTimestamp();
+            const logEmbed = this.client.logManager.createLogEmbed(
+                "TICKET_TRANSCRIPT",
+                Colors.Blue,
+                "**Ticket Transcript Generated**",
+                `>>> **Channel**: ${channel.name} (\`${channel.id}\`)\n` +
+                `**Transcript File**: Attached below`
+            );
+
+            logEmbed.setFooter({
+                text: `Ticket System • ${new Date().toLocaleTimeString()}`,
+                iconURL: guild.iconURL()
+            });
+
             await logChannel.send({
                 embeds: [logEmbed],
-                files: [transcript]
+                files: [transcript] // transcript file attachment
             });
         }
 

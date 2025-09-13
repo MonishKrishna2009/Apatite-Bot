@@ -6,7 +6,7 @@ const logger = new Logger();
 class MemberJoinLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MemberAdd,
+            name: Events.GuildMemberAdd,
         });
     }
     async execute(member) {

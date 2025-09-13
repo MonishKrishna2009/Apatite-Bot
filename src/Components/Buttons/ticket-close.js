@@ -98,16 +98,20 @@ class CloseTicketButton extends Component {
 
                 const logChannel = guild.channels.cache.get(config.ticketLogChannelId);
                 if (logChannel) {
-                    const logEmbed = new EmbedBuilder()
-                        .setColor("Orange")
-                        .setTitle("Ticket Closed")
-                        .setDescription(`Ticket closed by <@${user.id}>`)
-                        .addFields(
-                            { name: "Ticket Owner", value: `<@${dataTicket.userId}>`, inline: true },
-                            { name: "Channel", value: `<#${channel.id}>`, inline: true }
-                        )
-                        .setTimestamp()
-                        .setFooter({ text: `Ticket System`, iconURL: guild.iconURL() });
+                    const logEmbed = this.client.logManager.createLogEmbed(
+                        "TICKET_CLOSE",
+                        Colors.Orange,
+                        "**Ticket Closed**",
+                        `>>> **Closed By**: <@${user.id}>\n` +
+                        `**Owner**: <@${dataTicket.userId}>\n` +
+                        `**Channel**: <#${channel.id}>`
+                    );
+
+                    logEmbed.setFooter({
+                        text: `Ticket System • ${new Date().toLocaleTimeString()}`,
+                        iconURL: guild.iconURL()
+                    });
+
                     await logChannel.send({ embeds: [logEmbed] });
                 }
             } else {

@@ -6,7 +6,7 @@ const logger = new Logger();
 class MemberRoleLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MemberRoleUpdate,
+            name: Events.GuildMemberUpdate,
         });
     }
 

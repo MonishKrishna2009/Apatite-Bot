@@ -2,7 +2,7 @@ const { Logger } = require("../../Structure/Functions/Logger.js");
 const logger = new Logger();
 const Component = require("../../Structure/Handlers/BaseComponent.js");
 const ticketSchema = require("../../Structure/Schemas/Ticket/ticketSchema.js");
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ModalBuilder, TextInputBuilder } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ModalBuilder, TextInputBuilder, Colors } = require("discord.js");
 
 const config = require("../../Structure/Configs/config.js");
 
@@ -89,16 +89,20 @@ class TickReopenButton extends Component {
 
                 const logChannel = guild.channels.cache.get(config.ticketLogChannelId);
                 if (logChannel) {
-                    const logEmbed = new EmbedBuilder()
-                        .setColor("Blue")
-                        .setTitle("Ticket Reopened")
-                        .setDescription(`Ticket reopened by ${user.tag} (${user.id})`)
-                        .addFields(
-                            { name: "Ticket ID", value: dataTicket.userId, inline: true },
-                            { name: "Channel", value: `<#${channel.id}>`, inline: true }
-                        )
-                        .setTimestamp()
-                        .setFooter({ text: `Ticket System`, iconURL: guild.iconURL() });
+                    const logEmbed = this.client.logManager.createLogEmbed(
+                        "TICKET_REOPEN",
+                        Colors.Blue,
+                        "**Ticket Reopened**",
+                        `>>> **Reopened By**: ${user.tag} (\`${user.id}\`)\n` +
+                        `**Owner**: <@${dataTicket.userId}> (\`${dataTicket.userId}\`)\n` +
+                        `**Channel**: <#${channel.id}>`
+                    );
+
+                    logEmbed.setFooter({
+                        text: `Ticket System • ${new Date().toLocaleTimeString()}`,
+                        iconURL: guild.iconURL()
+                    });
+
                     await logChannel.send({ embeds: [logEmbed] });
                 }
             } else if (i.customId === "ticket-reopen-cancel") {

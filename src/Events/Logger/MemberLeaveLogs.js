@@ -6,7 +6,7 @@ const logger = new Logger();
 class MemberLeaveLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MemberRemove,
+            name: Events.GuildMemberRemove,
         });
     }
 

@@ -110,18 +110,22 @@ class TickDelButton extends Component {
 
             const logChannel = guild.channels.cache.get(config.ticketLogChannelId);
             if (logChannel) {
-                const logEmbed = new EmbedBuilder()
-                    .setColor(Colors.Red)
-                    .setTitle("Ticket Deleted")
-                    .addFields(
-                        { name: "Ticket Channel", value: `${channel.name} (${channel.id})` },
-                        { name: "Deleted By", value: `${user.tag} (${user.id})` },
-                        { name: "User", value: `<@${dataTicket.userId}> (${dataTicket.userId})` },
-                        { name: "Reason", value: "Ticket deleted via button" }
-                    )
-                    .setTimestamp()
-                    .setFooter({ text: "Ticket System", iconURL: guild.iconURL() });
-                logChannel.send({ embeds: [logEmbed] });
+                const logEmbed = this.client.logManager.createLogEmbed(
+                    "TICKET_DELETE",
+                    Colors.Red,
+                    "**Ticket Deleted**",
+                    `>>> **Channel**: ${channel.name} (\`${channel.id}\`)\n` +
+                    `**Deleted By**: ${user.tag} (\`${user.id}\`)\n` +
+                    `**Owner**: <@${dataTicket.userId}> (\`${dataTicket.userId}\`)\n` +
+                    `**Reason**: Ticket deleted via button`
+                );
+
+                logEmbed.setFooter({
+                    text: `Ticket System • ${new Date().toLocaleTimeString()}`,
+                    iconURL: guild.iconURL()
+                });
+
+                await logChannel.send({ embeds: [logEmbed] });
             }
 
             await channel.delete();

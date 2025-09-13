@@ -3,7 +3,6 @@ const { Logger } = require("../Functions/index");
 const logger = new Logger();
 
 const ticketSchema = require("./Ticket/ticketSchema");
-const setupSchema = require("./Setup/setup");
 
 function ConnectMongo(client) {
   if (client.config.mongoUrl) {
@@ -23,5 +22,4 @@ function ConnectMongo(client) {
 module.exports = {
   ConnectMongo,
   ticketSchema,
-  setupSchema,
 };

@@ -15,6 +15,8 @@ const clientOptions = {
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Channel, Partials.User, Partials.GuildMember],
   shards: ClusterClient.getInfo().SHARD_LIST,

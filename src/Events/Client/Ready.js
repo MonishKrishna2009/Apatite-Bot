@@ -14,7 +14,6 @@ class Ready extends Event {
   }
 
   async execute(client) {
-    const apatiteguild = client.guilds.cache.get(client.config.apatite);
     setInterval(() => {
       const activitys = [
         {

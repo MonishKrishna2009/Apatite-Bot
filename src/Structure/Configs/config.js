@@ -4,6 +4,7 @@ env.config("");
 module.exports = {
     // Configurations for the bot
     Token: process.env.TOKEN,
+    DefaultPrefix: "!",
     mongoUrl: process.env.MONGO_URI,
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,

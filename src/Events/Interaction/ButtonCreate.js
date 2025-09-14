@@ -13,21 +13,40 @@ class ButtonCreate extends Event {
   async execute(interaction) {
     const { client } = this;
     if (!interaction.isButton()) return;
-    const button = client.buttons.get(interaction.customId);
-    if (!button) return;
+
+    let button = client.buttons.get(interaction.customId);
+
+    // If not found, try regex/prefix match
+    if (!button) {
+      for (const comp of client.buttons.values()) {
+        // Regex match
+        if (comp.id instanceof RegExp && comp.id.test(interaction.customId)) {
+          button = comp;
+          break;
+        }
+
+        // Prefix match
+        if (typeof comp.id === "string" && interaction.customId.startsWith(comp.id)) {
+          button = comp;
+          break;
+        }
+      }
+    }
+
+    if (!button) return; // No matching component found
 
     try {
       await button.execute(interaction, client);
     } catch (error) {
       logger.error(error);
-      if (interaction.replied) {
+      if (interaction.replied || interaction.deferred) {
         await interaction.editReply({
-          content: "Catch an error while running this command.",
+          content: "⚠️ An error occurred while running this button.",
           flags: MessageFlags.Ephemeral,
         });
       } else {
         await interaction.reply({
-          content: "Catch an error while running this command.",
+          content: "⚠️ An error occurred while running this button.",
           flags: MessageFlags.Ephemeral,
         });
       }

@@ -1,154 +1,78 @@
 const Command = require("../../Structure/Handlers/BaseCommand");
-const { SlashCommandBuilder, EmbedBuilder, Colors, MessageFlags, ActionRowBuilder, ActionRow, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
-
-const checkValoCooldown = require("../../Structure/Functions/valoLfCooldown");
+const { SlashCommandBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
 
 class LFSys extends Command {
     constructor(client) {
         super(client, {
             data: new SlashCommandBuilder()
                 .setName("valo-looking-for")
-                .setDescription("Send a message to the LFP/LFT channel!")
-                .addSubcommand(subcommand =>
-                    subcommand
-                        .setName("players")
-                        .setDescription("Looking for players")
+                .setDescription("Send a request to find a team or players.")
+                .addSubcommand(sub =>
+                    sub.setName("players").setDescription("Looking for players (LFP)")
                 )
-                .addSubcommand(subcommand =>
-                    subcommand
-                        .setName("team")
-                        .setDescription("Looking for a team")
+                .addSubcommand(sub =>
+                    sub.setName("team").setDescription("Looking for a team (LFT)")
                 )
                 .setDMPermission(false),
-            options: {
-                devOnly: false,
-            },
+            options: { devOnly: false },
         });
     }
+
     async execute(interaction, client) {
-        const { guild } = interaction;
-        const subcommand = interaction.options.getSubcommand();
+        const sub = interaction.options.getSubcommand();
 
-        // Check cooldown
-        const cooldownMs = 1000 * 60 * 10; // 10 min cooldown
-        const cd = await checkValoCooldown(interaction.user.id, interaction.guild.id, subcommand, cooldownMs);
-        if (cd.onCooldown) {
-            return interaction.reply({
-                content: `⏳ You must wait **${cd.timeLeft} minute(s)** before using \`${subcommand.toUpperCase()}\` again.`,
-                ephemeral: true
-            });
-        }
-
-        if (subcommand === "players") {
+        if (sub === "players") {
             const modal = new ModalBuilder()
-                .setCustomId('valolfpModal')
-                .setTitle('Looking For Players');
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('teamName')
-                        .setLabel("What is your team's name?")
-                        .setPlaceholder("eg. Apatite")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row2 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('rolesNeeded')
-                        .setLabel("What roles are you looking for?")
-                        .setPlaceholder("eg: sentinel, duelist etc...")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row3 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('peekRank')
-                        .setLabel("What is your peak rank?")
-                        .setPlaceholder("eg: Immortal 3")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row4 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('currentRank')
-                        .setLabel("What is your current rank?")
-                        .setPlaceholder("eg: Diamond 1")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row5 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('additionalInfo')
-                        .setLabel("Additional information")
-                        .setPlaceholder("Availability, languages, flexibility etc... (optional)")
-                        .setMaxLength(3000)
-                        .setStyle(TextInputStyle.Paragraph)
-                        .setRequired(false)
-                );
-            modal.addComponents(row, row2, row3, row4, row5);
-            await interaction.showModal(modal);
-        }
-        if (subcommand === "team") {
-            const modal = new ModalBuilder()
-                .setCustomId('valolftModal')
-                .setTitle('Looking For Team');
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('riotID')
-                        .setLabel("What is your Riot ID?")
-                        .setPlaceholder("eg. Apatite#SA1")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row2 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('rolesPlayed')
-                        .setLabel("What roles do you play?")
-                        .setPlaceholder("eg: sentinel, duelist etc...")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row3 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('peekRank')
-                        .setLabel("What is your peak rank/current rank")
-                        .setPlaceholder("eg: Immortal 3")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
-                );
-            const row4 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('recentTeams')
-                        .setLabel("What teams have you played for recently?")
-                        .setPlaceholder("eg: Apatite Weekly scrims (optional)")
-                        .setMaxLength(300)
-                        .setStyle(TextInputStyle.Paragraph)
-                        .setRequired(false)
-                );
-            const row5 = new ActionRowBuilder()
-                .addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('additionalInfo')
-                        .setLabel("Details")
-                        .setPlaceholder("Availability, languages, scrim times etc... (optional)")
-                        .setMaxLength(3000)
-                        .setStyle(TextInputStyle.Paragraph)
-                        .setRequired(false)
-                );
-            modal.addComponents(row, row2, row3, row4, row5);
-            await interaction.showModal(modal);
+                .setCustomId("valolfpModal")
+                .setTitle("Looking For Players");
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("teamName").setLabel("Team Name").setPlaceholder("eg. Apatite").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("rolesNeeded").setLabel("Roles Needed").setPlaceholder("eg: sentinel, duelist etc...").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("peekRank").setLabel("Peak Rank").setPlaceholder("eg: Immortal 3").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("currentRank").setLabel("Current Rank").setPlaceholder("eg: Diamond 1").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("additionalInfo").setLabel("Additional Info").setPlaceholder("Availability, languages, flexibility etc... (optional)").setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(3000)
+                )
+            );
+
+            return interaction.showModal(modal);
         }
 
+        if (sub === "team") {
+            const modal = new ModalBuilder()
+                .setCustomId("valolftModal")
+                .setTitle("Looking For Team");
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("riotID").setLabel("Riot ID").setPlaceholder("eg. Apatite#SA1").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("rolesPlayed").setLabel("Roles Played").setPlaceholder("eg: sentinel, duelist etc...").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("peekRank").setLabel("Peak/Current Rank").setPlaceholder("eg: Immortal 3").setStyle(TextInputStyle.Short).setRequired(true)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("recentTeams").setLabel("Recent Teams").setPlaceholder("eg: Apatite Weekly scrims (optional)").setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(300)
+                ),
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder().setCustomId("additionalInfo").setLabel("Details").setPlaceholder("Availability, languages, scrim times etc... (optional)").setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(3000)
+                )
+            );
+
+            return interaction.showModal(modal);
+        }
     }
-
 }
 
 module.exports = LFSys;

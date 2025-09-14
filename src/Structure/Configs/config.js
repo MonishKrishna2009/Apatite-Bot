@@ -31,6 +31,7 @@ module.exports = {
     lfpLftSystem: true,
     valoReviewChannelId: process.env.VALO_LF_REVIEW_CHANNEL_ID,
     valolfpLftChannelId: process.env.VALO_LFP_LFT_CHANNEL_ID,
+    lfplftModroleId: process.env.LF_MOD_ROLE_ID,
 
 
     // Bot admins and developers

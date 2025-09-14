@@ -1,10 +1,14 @@
 const { Schema, model } = require("mongoose");
 
-const valoCooldownSchema = new Schema({
+const valoRequestSchema = new Schema({
     userId: { type: String, required: true },
-    guildId: { type: String, required: true }, // optional, if per-server cooldowns
-    lfpLastUsed: { type: Date, default: null },
-    lftLastUsed: { type: Date, default: null }
+    guildId: { type: String, required: true },
+    type: { type: String, enum: ["LFP", "LFT"], required: true },
+    content: { type: Object, required: true }, // Store form details
+    status: { type: String, enum: ["pending", "approved", "declined"], default: "pending" },
+    reviewedBy: { type: String, default: null },
+    messageId: { type: String, default: null }, // Review channel message
+    createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = model("ValoLFPLFTCooldown", valoCooldownSchema);
+module.exports = model("ValoRequest", valoRequestSchema);

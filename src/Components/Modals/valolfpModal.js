@@ -3,38 +3,39 @@ const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, Mess
 const ValoRequest = require("../../Structure/Schemas/LookingFor/valolfplft");
 const config = require("../../Structure/Configs/config");
 
-class ValoLFTModal extends Component {
+class ValoLFPModal extends Component {
     constructor(client) {
-        super(client, { id: "valolftModal" });
+        super(client, { id: "valolfpModal" });
     }
 
     async execute(interaction) {
         const { guild, user } = interaction;
-        const riotID = interaction.fields.getTextInputValue("riotID");
-        const rolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");
+
+        const teamName = interaction.fields.getTextInputValue("teamName");
+        const rolesNeeded = interaction.fields.getTextInputValue("rolesNeeded");
         const peekRank = interaction.fields.getTextInputValue("peekRank");
-        const recentTeams = interaction.fields.getTextInputValue("recentTeams") || "N/A";
+        const currentRank = interaction.fields.getTextInputValue("currentRank");
         const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
 
         // Save to DB
         const req = await ValoRequest.create({
             userId: user.id,
             guildId: guild.id,
-            type: "LFT",
-            content: { riotID, rolesPlayed, peekRank, recentTeams, additionalInfo }
+            type: "LFP",
+            content: { teamName, rolesNeeded, peekRank, currentRank, additionalInfo }
         });
 
         // Review Embed
         const embed = new EmbedBuilder()
-            .setTitle("🔎 LFT Request (Pending Review)")
-            .setColor(Colors.Grey)
+            .setTitle("👥 LFP Request (Pending Review)")
             .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+            .setColor(Colors.Grey)
             .setDescription(
                 `>>> **User:** <@${user.id}>\n` +
-                `**Riot ID:** ${riotID}\n` +
-                `**Roles Played:** ${rolesPlayed}\n` +
-                `**Peak/Current Rank:** ${peekRank}\n` +
-                `**Recent Teams:** ${recentTeams}\n` +
+                `**Team Name:** ${teamName}\n` +
+                `**Roles Needed:** ${rolesNeeded}\n` +
+                `**Peak Rank:** ${peekRank}\n` +
+                `**Current Rank:** ${currentRank}\n` +
                 `**Additional Info:** ${additionalInfo}`
             )
             .setFooter({ text: `Request ID: ${req._id}` })
@@ -57,9 +58,8 @@ class ValoLFTModal extends Component {
             .setDescription("Your request has been submitted and is pending review by our staff team. You will be notified once it has been reviewed.")
             .setFooter({ text: `Request ID: ${req._id}` })
             .setTimestamp();
-
         await interaction.reply({embeds: [replyEmbed], flags: MessageFlags.Ephemeral });
     }
 }
 
-module.exports = ValoLFTModal;
+module.exports = ValoLFPModal;

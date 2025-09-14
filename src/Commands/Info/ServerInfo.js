@@ -10,7 +10,8 @@ class ServerInfo extends Command {
         super(client, {
             data: new SlashCommandBuilder()
                 .setName("serverinfo")
-                .setDescription("Get information about the server."),
+                .setDescription("Get information about the server.")
+                .setDMPermission(false),
             options: {
                 devOnly: false,
             },

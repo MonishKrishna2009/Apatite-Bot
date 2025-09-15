@@ -1,7 +1,9 @@
 const Component = require("../../Structure/Handlers/BaseComponent");
-const { EmbedBuilder, Colors, MessageFlags } = require("discord.js");
-const ValoRequest = require("../../Structure/Schemas/LookingFor/valolfplft");
+const { EmbedBuilder, Colors, MessageFlags, ButtonBuilder, ActionRowBuilder } = require("discord.js");
+const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
+const { Logger } = require("../../Structure/Functions/Logger");
+const logger = new Logger();
 
 class ValoReviewHandler extends Component {
     constructor(client) {
@@ -10,7 +12,7 @@ class ValoReviewHandler extends Component {
 
     async execute(interaction) {
         const [ , requestId, action ] = interaction.customId.split("_");
-        const req = await ValoRequest.findById(requestId);
+        const req = await LFRequest.findById(requestId);
         if (!req) return interaction.reply({ content: "❌ Request not found.", flags: MessageFlags.Ephemeral });
 
         if (req.status !== "pending") {
@@ -44,17 +46,23 @@ class ValoReviewHandler extends Component {
                 .setTimestamp();
             await target.send({ embeds: [approveEmbed] });
         } catch (err) {
-            console.error("DM failed:", err.message);
+            logger.warn(`Failed to DM user ${req.userId} about their ${req.type} request.`);
         }
 
         // If approved → post to public channel
         if (action === "approve") {
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                .setLabel(req.type === "LFP" ? "DM Contract" : "DM Player")
+                .setStyle("Link")
+                .setURL(`https://discord.com/users/${req.userId}`)
+            );
             const publicEmbed = EmbedBuilder.from(newEmbed)
                 .setTitle(req.type === "LFP" ? "📢 Looking For Players" : "📢 Looking For Team")
                 .setColor(req.type === "LFP" ? Colors.Blue : Colors.Purple);
 
             const publicChannel = interaction.guild.channels.cache.get(config.valolfpLftChannelId);
-            await publicChannel.send({ embeds: [publicEmbed] });
+            await publicChannel.send({ embeds: [publicEmbed], components: [row]});
         }
     }
 }

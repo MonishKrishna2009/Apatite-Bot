@@ -21,7 +21,7 @@ class MemberJoinLogs extends Event {
                 `>>> **Member**: ${member.user.tag} (\`${member.id}\`)\n` +
                 `**Account Created**: <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
             ).setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
-            await logManager.sendLog("serverLog", embed);
+            await logManager.sendLog("memberLog", embed);
         } catch (error) {
             logger.error(error);
         }

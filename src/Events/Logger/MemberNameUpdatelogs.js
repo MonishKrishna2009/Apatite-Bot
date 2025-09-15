@@ -25,7 +25,7 @@ class MemberNameUpdateLogs extends Event {
                     `**Old Nickname**: ${oldMember.nickname || "None"}\n` +
                     `**New Nickname**: ${newMember.nickname || "None"}`
                 );
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendLog("memberLog", embed);
                 return;
             }
         } catch (error) {

@@ -3,7 +3,7 @@ const { Logger } = require("../Functions/index");
 const logger = new Logger();
 
 const ticketSchema = require("./Ticket/ticketSchema");
-const ValoRequest = require("./LookingFor/valolfplft")
+const LFRequest = require("./LookingFor/lfplft");
 
 function ConnectMongo(client) {
   if (client.config.mongoUrl) {
@@ -23,5 +23,5 @@ function ConnectMongo(client) {
 module.exports = {
   ConnectMongo,
   ticketSchema,
-  ValoRequest
+  LFRequest
 };

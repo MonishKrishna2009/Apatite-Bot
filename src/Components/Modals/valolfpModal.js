@@ -1,6 +1,6 @@
 const Component = require("../../Structure/Handlers/BaseComponent");
 const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
-const ValoRequest = require("../../Structure/Schemas/LookingFor/valolfplft");
+const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 
 class ValoLFPModal extends Component {
@@ -18,10 +18,11 @@ class ValoLFPModal extends Component {
         const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
 
         // Save to DB
-        const req = await ValoRequest.create({
+        const req = await LFRequest.create({
             userId: user.id,
             guildId: guild.id,
             type: "LFP",
+            game: "Valorant",
             content: { teamName, rolesNeeded, peekRank, currentRank, additionalInfo }
         });
 

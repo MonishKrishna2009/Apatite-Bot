@@ -28,7 +28,7 @@ class MemberRoleLogs extends Event {
                     `>>> **Member**: ${newMember.user.tag} (\`${newMember.id}\`)\n` +
                     `**Added Role(s)**: ${addedRoles.map(role => role.name).join(", ")}`
                 );
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendLog("memberLog", embed);
             }
             if (removedRoles.size > 0) {
                 const embed = logManager.createLogEmbed(
@@ -38,7 +38,7 @@ class MemberRoleLogs extends Event {
                     `>>> **Member**: ${newMember.user.tag} (\`${newMember.id}\`)\n` +
                     `**Removed Role(s)**: ${removedRoles.map(role => role.name).join(", ")}`
                 );
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendLog("memberLog", embed);
             }
         } catch (error) {
             logger.error(error);

@@ -5,12 +5,23 @@ const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
 
-class ValoReviewHandler extends Component {
+class LFReviewHandler extends Component {
     constructor(client) {
-        super(client, { id: /^valoreview_.+/ }); // regex match
+        super(client, { id: /^lfreview_.+/ }); // regex match
     }
 
     async execute(interaction) {
+
+        //check if user has LFP mod role
+        if (!interaction.member.roles.cache.has(config.lfplftModroleId)) {
+            const noPermEmbed = new EmbedBuilder()
+                .setTitle("❌ Insufficient Permissions")
+                .setColor(Colors.Red)
+                .setDescription("You do not have permission to review LFP/LFT requests. \n > Required Role: <@&" + config.lfplftModroleId + ">")
+                .setTimestamp();
+            return interaction.reply({ embeds: [noPermEmbed], flags: MessageFlags.Ephemeral });
+        }
+
         const [ , requestId, action ] = interaction.customId.split("_");
         const req = await LFRequest.findById(requestId);
         if (!req) return interaction.reply({ content: "❌ Request not found.", flags: MessageFlags.Ephemeral });
@@ -19,6 +30,7 @@ class ValoReviewHandler extends Component {
             return interaction.reply({ content: "⚠️ This request has already been reviewed.", flags: MessageFlags.Ephemeral });
         }
 
+
         req.status = action === "approve" ? "approved" : "declined";
         req.reviewedBy = interaction.user.id;
         await req.save();
@@ -26,6 +38,7 @@ class ValoReviewHandler extends Component {
         // Update review embed
         const oldEmbed = interaction.message.embeds[0];
         const newEmbed = EmbedBuilder.from(oldEmbed)
+            .setTitle(req.type === "LFP" ? "👥 LFP Request" : "🔎 LFT Request")
             .setColor(action === "approve" ? Colors.Green : Colors.Red)
             .setFooter({ text: `Reviewed by ${interaction.user.tag} | Request ID: ${req._id}` });
 
@@ -63,8 +76,11 @@ class ValoReviewHandler extends Component {
 
             const publicChannel = interaction.guild.channels.cache.get(config.valolfpLftChannelId);
             await publicChannel.send({ embeds: [publicEmbed], components: [row]});
+            // Save public message ID
+            req.publicMessageId = publicMessage.id;
+            await req.save();
         }
     }
 }
 
-module.exports = ValoReviewHandler;
+module.exports = LFReviewHandler;

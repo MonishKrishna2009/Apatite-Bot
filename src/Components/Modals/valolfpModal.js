@@ -43,8 +43,8 @@ class ValoLFPModal extends Component {
             .setTimestamp();
 
         const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`valoreview_${req._id}_approve`).setLabel("✅ Approve").setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId(`valoreview_${req._id}_decline`).setLabel("❌ Decline").setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId(`lfreview_${req._id}_approve`).setLabel("✅ Approve").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId(`lfreview_${req._id}_decline`).setLabel("❌ Decline").setStyle(ButtonStyle.Danger)
         );
 
         const reviewChannel = guild.channels.cache.get(config.valoReviewChannelId);

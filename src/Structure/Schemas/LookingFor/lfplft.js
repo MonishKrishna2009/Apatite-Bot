@@ -9,6 +9,7 @@ const LFRequestSchema = new Schema({
     status: { type: String, enum: ["pending", "approved", "declined", "archived", "expired"], default: "pending" },
     reviewedBy: { type: String, default: null },
     messageId: { type: String, default: null }, // Review channel message
+    publicMessageId: { type: String, default: null }, // Public channel message
     createdAt: { type: Date, default: Date.now }
 });
 

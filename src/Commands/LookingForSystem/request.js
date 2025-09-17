@@ -3,10 +3,12 @@ const {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  StringSelectMenuBuilder,
   Colors,
   ComponentType,
+  MessageFlags,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 
 const config = require("../../Structure/Configs/config");
@@ -23,7 +25,7 @@ class RequestsCommand extends Command {
         .setName("requests")
         .setDescription("Manage your LFP/LFT entries.")
         .addSubcommand((sub) =>
-          sub.setName("my").setDescription("List your requests (with pagination)")
+          sub.setName("list").setDescription("List your LFP/LFT requests")
         )
         .addSubcommand((sub) =>
           sub
@@ -39,9 +41,7 @@ class RequestsCommand extends Command {
         .addSubcommand((sub) =>
           sub
             .setName("resend")
-            .setDescription(
-              "Resend an archived/expired request to the review channel"
-            )
+            .setDescription("Resend an archived/expired request to the review channel")
             .addStringOption((opt) =>
               opt
                 .setName("request_id")
@@ -70,8 +70,8 @@ class RequestsCommand extends Command {
     const sub = interaction.options.getSubcommand();
 
     try {
-      // -------------------- "MY" (with pagination) --------------------
-      if (sub === "my") {
+      // -------------------- "LIST" --------------------
+      if (sub === "list") {
         const reqs = await LFRequest.find({
           userId: interaction.user.id,
           guildId: interaction.guild.id,
@@ -84,7 +84,10 @@ class RequestsCommand extends Command {
             .setColor(Colors.Yellow)
             .setTimestamp();
 
-          return interaction.reply({ embeds: [noReq], flags: MessageFlags.Ephemeral });
+          return interaction.reply({
+            embeds: [noReq],
+            flags: MessageFlags.Ephemeral,
+          });
         }
 
         const perPage = 5;
@@ -101,49 +104,57 @@ class RequestsCommand extends Command {
           return new EmbedBuilder()
             .setTitle("📋 Your Requests")
             .setDescription(slice.map(r => this.makeRequestPreview(r)).join("\n\n"))
-            .setFooter({ text: `Page ${page + 1} of ${totalPages} | Total: ${reqs.length} | Pending: ${counts.pending || 0} • Approved: ${counts.approved || 0} • Declined: ${counts.declined || 0} • Archived: ${counts.archived || 0} • Expired: ${counts.expired || 0}` })
+            .setFooter({
+              text: `Page ${page + 1} of ${totalPages} | Total: ${reqs.length} | Pending: ${counts.pending || 0} • Approved: ${counts.approved || 0} • Declined: ${counts.declined || 0} • Archived: ${counts.archived || 0} • Expired: ${counts.expired || 0}`,
+            })
             .setColor(Colors.Blue)
             .setTimestamp();
         };
 
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId("prev").setLabel("◀ Prev").setStyle(ButtonStyle.Secondary).setDisabled(true),
-          new ButtonBuilder().setCustomId("next").setLabel("Next ▶").setStyle(ButtonStyle.Secondary).setDisabled(totalPages <= 1)
-        );
+        const buildMenu = (page) => {
+          return new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId("page_select")
+              .setPlaceholder("Jump to page...")
+              .addOptions(
+                [...Array(totalPages)].map((_, i) => ({
+                  label: `Page ${i + 1}`,
+                  value: i.toString(),
+                  default: i === page,
+                }))
+              )
+          );
+        };
 
         const msg = await interaction.reply({
           embeds: [buildEmbed(page)],
-          components: [row],
-          flags: MessageFlags.Ephemeral,
-          withResponse: true,
+          components: [buildMenu(page)],
+          flags: MessageFlags.Ephemeral
         });
 
         const collector = msg.createMessageComponentCollector({
-          componentType: ComponentType.Button,
+          componentType: ComponentType.StringSelect,
           time: 60_000,
         });
 
-        collector.on("collect", async (btnInt) => {
-          if (btnInt.user.id !== interaction.user.id)
-            return btnInt.reply({ content: "This is not your menu.", flags: MessageFlags.Ephemeral });
+        collector.on("collect", async (int) => {
+          if (int.user.id !== interaction.user.id) {
+            return int.reply({
+              content: "This is not your menu.",
+              flags: MessageFlags.Ephemeral,
+            });
+          }
 
-          if (btnInt.customId === "prev" && page > 0) page--;
-          if (btnInt.customId === "next" && page < totalPages - 1) page++;
+          page = parseInt(int.values[0]);
 
-          const newRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId("prev").setLabel("◀ Prev").setStyle(ButtonStyle.Secondary).setDisabled(page === 0),
-            new ButtonBuilder().setCustomId("next").setLabel("Next ▶").setStyle(ButtonStyle.Secondary).setDisabled(page === totalPages - 1)
-          );
-
-          await btnInt.update({ embeds: [buildEmbed(page)], components: [newRow] });
+          await int.update({
+            embeds: [buildEmbed(page)],
+            components: [buildMenu(page)],
+          });
         });
 
         collector.on("end", async () => {
-          const disabledRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId("prev").setLabel("◀ Prev").setStyle(ButtonStyle.Secondary).setDisabled(true),
-            new ButtonBuilder().setCustomId("next").setLabel("Next ▶").setStyle(ButtonStyle.Secondary).setDisabled(true)
-          );
-          await msg.edit({ components: [disabledRow] }).catch(() => null);
+          await msg.edit({ components: [] }).catch(() => null);
         });
 
         return;
@@ -192,39 +203,43 @@ class RequestsCommand extends Command {
 
         const triedDeletes = [];
 
-        // delete review msg
+        // Try deleting review message
         if (req.messageId) {
           try {
             const ch = await client.channels.fetch(config.valoReviewChannelId);
-            const msg = await ch.messages.fetch(req.messageId).catch(() => null);
-            if (msg) await msg.delete();
+            const m = await ch.messages.fetch(req.messageId).catch(() => null);
+            if (m) await m.delete();
             triedDeletes.push("review message");
           } catch { }
         }
 
-        // delete public msg
+        // Try deleting public message
         if (req.publicMessageId) {
           try {
             const ch = await client.channels.fetch(config.valolfpLftChannelId);
-            const msg = await ch.messages.fetch(req.publicMessageId).catch(() => null);
-            if (msg) await msg.delete();
+            const m = await ch.messages.fetch(req.publicMessageId).catch(() => null);
+            if (m) await m.delete();
             triedDeletes.push("public message");
           } catch { }
         }
 
-        req.status = "archived";
-        await req.save();
+        // 🚨 Delete from DB instead of archiving
+        await LFRequest.deleteOne({ _id: req._id });
 
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
-              .setTitle("✅ Request Cancelled")
-              .setDescription(`Your request \`${req._id}\` has been cancelled.${triedDeletes.length ? ` Removed: ${triedDeletes.join(", ")}` : ""}`)
+              .setTitle("✅ Request Cancelled & Removed")
+              .setDescription(
+                `Your request \`${req._id}\` has been cancelled and removed from the system.${triedDeletes.length ? ` Deleted: ${triedDeletes.join(", ")}` : ""
+                }`
+              )
               .setColor(Colors.Green),
           ],
           flags: MessageFlags.Ephemeral,
         });
       }
+
 
       // -------------------- "RESEND" --------------------
       if (sub === "resend") {
@@ -240,14 +255,24 @@ class RequestsCommand extends Command {
 
         if (req.userId !== interaction.user.id) {
           return interaction.reply({
-            embeds: [new EmbedBuilder().setTitle("❌ Not Allowed").setColor(Colors.Red).setDescription("You can only resend your own requests.")],
+            embeds: [
+              new EmbedBuilder()
+                .setTitle("❌ Not Allowed")
+                .setColor(Colors.Red)
+                .setDescription("You can only resend your own requests."),
+            ],
             flags: MessageFlags.Ephemeral,
           });
         }
 
         if (!["archived", "expired"].includes(req.status)) {
           return interaction.reply({
-            embeds: [new EmbedBuilder().setTitle("⚠️ Cannot Resend").setColor(Colors.Yellow).setDescription("Only archived or expired requests can be resent.")],
+            embeds: [
+              new EmbedBuilder()
+                .setTitle("⚠️ Cannot Resend")
+                .setColor(Colors.Yellow)
+                .setDescription("Only archived or expired requests can be resent."),
+            ],
             flags: MessageFlags.Ephemeral,
           });
         }
@@ -274,12 +299,18 @@ class RequestsCommand extends Command {
           const reviewEmbed = renderRequestEmbed(req, author);
 
           const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`lfreview_${req._id}_approve`).setLabel("✅ Approve").setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId(`lfreview_${req._id}_decline`).setLabel("❌ Decline").setStyle(ButtonStyle.Danger)
+            new ButtonBuilder()
+              .setCustomId(`lfreview_${req._id}_approve`)
+              .setLabel("✅ Approve")
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId(`lfreview_${req._id}_decline`)
+              .setLabel("❌ Decline")
+              .setStyle(ButtonStyle.Danger)
           );
 
-          const msg = await reviewCh.send({ embeds: [reviewEmbed], components: [row] });
-          req.messageId = msg.id;
+          const m = await reviewCh.send({ embeds: [reviewEmbed], components: [row] });
+          req.messageId = m.id;
           await req.save();
         } catch (err) {
           logger.warn(`Failed to send resent request ${req._id}: ${err.message}`);
@@ -289,7 +320,10 @@ class RequestsCommand extends Command {
       }
     } catch (err) {
       logger.error(`RequestsCommand error: ${err.stack}`);
-      return interaction.reply({ content: "An error occurred, please try again later.", flags: MessageFlags.Ephemeral });
+      return interaction.reply({
+        content: "An error occurred, please try again later.",
+        flags: MessageFlags.Ephemeral,
+      });
     }
   }
 }

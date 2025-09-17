@@ -11,7 +11,6 @@ class LFReviewHandler extends Component {
     }
 
     async execute(interaction) {
-
         //check if user has LFP mod role
         if (!interaction.member.roles.cache.has(config.lfplftModroleId)) {
             const noPermEmbed = new EmbedBuilder()
@@ -22,14 +21,13 @@ class LFReviewHandler extends Component {
             return interaction.reply({ embeds: [noPermEmbed], flags: MessageFlags.Ephemeral });
         }
 
-        const [ , requestId, action ] = interaction.customId.split("_");
+        const [, requestId, action] = interaction.customId.split("_");
         const req = await LFRequest.findById(requestId);
         if (!req) return interaction.reply({ content: "❌ Request not found.", flags: MessageFlags.Ephemeral });
 
         if (req.status !== "pending") {
             return interaction.reply({ content: "⚠️ This request has already been reviewed.", flags: MessageFlags.Ephemeral });
         }
-
 
         req.status = action === "approve" ? "approved" : "declined";
         req.reviewedBy = interaction.user.id;
@@ -62,21 +60,25 @@ class LFReviewHandler extends Component {
             logger.warn(`Failed to DM user ${req.userId} about their ${req.type} request.`);
         }
 
-        // If approved → post to public channel
+        // If approved → post to public channel and save messageId
         if (action === "approve") {
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                .setLabel(req.type === "LFP" ? "DM Contract" : "DM Player")
-                .setStyle("Link")
-                .setURL(`https://discord.com/users/${req.userId}`)
+                    .setLabel(req.type === "LFP" ? "DM Contract" : "DM Player")
+                    .setStyle("Link")
+                    .setURL(`https://discord.com/users/${req.userId}`)
             );
+
             const publicEmbed = EmbedBuilder.from(newEmbed)
                 .setTitle(req.type === "LFP" ? "📢 Looking For Players" : "📢 Looking For Team")
                 .setColor(req.type === "LFP" ? Colors.Blue : Colors.Purple);
 
             const publicChannel = interaction.guild.channels.cache.get(config.valolfpLftChannelId);
-            await publicChannel.send({ embeds: [publicEmbed], components: [row]});
-            // Save public message ID
+
+            // send and capture message
+            const publicMessage = await publicChannel.send({ embeds: [publicEmbed], components: [row] });
+
+            // save messageId for future edits/deletes
             req.publicMessageId = publicMessage.id;
             await req.save();
         }

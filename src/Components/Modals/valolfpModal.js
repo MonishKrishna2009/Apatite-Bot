@@ -3,6 +3,9 @@ const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, Mess
 const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 
+const { Logger } = require("../../Structure/Functions/Logger");
+const logger = new Logger();
+
 class ValoLFPModal extends Component {
     constructor(client) {
         super(client, { id: "valolfpModal" });
@@ -60,6 +63,27 @@ class ValoLFPModal extends Component {
             .setFooter({ text: `Request ID: ${req._id}` })
             .setTimestamp();
         await interaction.reply({embeds: [replyEmbed], flags: MessageFlags.Ephemeral });
+
+        // DM requested details to the user as confirmation
+        const dmEmbed = new EmbedBuilder()
+            .setTitle("👥 LFP Request Submitted")
+            .setColor(Colors.Blue)
+            .setDescription(
+                `You have submitted a Looking For Players (LFP) request. Here are the details:\n\n` +
+                `> **Team Name:** ${teamName}\n` +
+                `> **Roles Needed:** ${rolesNeeded}\n` +
+                `> **Peak Rank:** ${peekRank}\n` +
+                `> **Current Rank:** ${currentRank}\n` +
+                `> **Additional Info:** ${additionalInfo}\n\n` +
+                `You will be notified once your request has been reviewed by our staff team.`
+            )
+            .setFooter({ text: `Request ID: ${req._id}` })
+            .setTimestamp();
+        try {
+            await user.send({ embeds: [dmEmbed] });
+        } catch (err) {
+            logger.warn(`Could not DM user ${user.tag} (${user.id}) their LFP request confirmation.`);
+        }
     }
 }
 

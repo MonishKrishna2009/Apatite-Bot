@@ -3,6 +3,9 @@ const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, Mess
 const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 
+const { Logger } = require("../../Structure/Functions/Logger");
+const logger = new Logger();
+
 class ValoLFTModal extends Component {
     constructor(client) {
         super(client, { id: "valolftModal" });
@@ -60,6 +63,26 @@ class ValoLFTModal extends Component {
             .setTimestamp();
 
         await interaction.reply({embeds: [replyEmbed], flags: MessageFlags.Ephemeral });
+
+        // DM requested details to the user as confirmation
+        const dmEmbed = new EmbedBuilder()
+            .setTitle("🔎 LFT Request Submitted")
+            .setColor(Colors.Green)
+            .setDescription(
+                `Your LFT request has been submitted successfully and is pending review by our staff team. You will be notified once it has been reviewed.\n\n` +
+                `**Riot ID:** ${riotID}\n` +
+                `**Roles Played:** ${rolesPlayed}\n` +
+                `**Peak/Current Rank:** ${peekRank}\n` +
+                `**Recent Teams:** ${recentTeams}\n` +
+                `**Additional Info:** ${additionalInfo}`
+            )
+            .setFooter({ text: `Request ID: ${req._id}` })
+            .setTimestamp();
+        try {
+            await user.send({ embeds: [dmEmbed] });
+        } catch (err) {
+            logger.warn(`Failed to DM user ${user.id} about their LFT request.`);
+        }
     }
 }
 

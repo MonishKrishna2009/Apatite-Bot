@@ -72,9 +72,9 @@ src/
 
 ### Prerequisites <a name="prerequisites"></a>
 - A Discord Bot - [Tutorial](./docs/Indev.md)
-- Installation of Bun - [Tutorial](./docs/Indev.md)
+- Installation of Bun - [Tutorial](https://bun.com/docs/installation)
 - MongoDB Database - [Tutorial](./docs/Indev.md)
-- Git - [Tutorial](./docs/Indev.md)
+- Git - [Tutorial](https://github.com/git-guides/install-git)
 
 > [!CAUTION]
 > Ensure **MongoDB** is running before starting the bot, otherwise commands may fail.
@@ -148,7 +148,7 @@ bun .
 
 ## 📑 Documentation <a name="documentation"></a>
 - [Ticket System](./docs/Indev.md)
-- [Lfp/Lft System](./docs/Indev.md)
+- [Lfp/Lft System](./docs/Lfp-Lft%20System.md)
 - [Moderation](./docs/Indev.md)
 - [Logger](./docs/Indev.md)
 - [Structure](./docs/Indev.md)

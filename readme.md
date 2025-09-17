@@ -58,11 +58,9 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 ```yaml
 src/
-├── Commands/ #Slash Commands
-├── Commands/ #Slash Commands
+├── Commands/ # Slash Commands
 ├── Components/ # Buttons, Modals, Review Handlers
 ├── Events/ # Client & Interaction event listeners
-├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers, Schemas)
 ├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers, Schemas)
 ```
 > [!NOTE]

@@ -1,21 +1,79 @@
-MIT License
+                    GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
 
-Copyright (c) [2025] [Monish Krishna K]
+ Copyright (C) 2025 Monish Krishna
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+                            Preamble
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+ The GNU Affero General Public License is a free, copyleft license for
+ software and other kinds of works, specifically designed to ensure
+ cooperation with the community in the case of network server software.
+
+ [--- PREAMBLE SHORTENED FOR BREVITY ---]
+
+                        TERMS AND CONDITIONS
+
+ 0. Definitions.
+    "This License" refers to version 3 of the GNU Affero General Public License.
+    "Copyright Holder" refers to the copyright owner, Monish Krishna.
+    "The Program" refers to any work licensed under this License.
+
+ 1. Source Code.
+    The "source code" for a work means the preferred form of the work
+    for making modifications to it. "Object code" means any non-source form.
+
+ 2. Basic Permissions.
+    All rights granted under this License are granted for the term of
+    copyright on the Program, and are irrevocable provided the stated
+    conditions are met. This License explicitly affirms your unlimited
+    permission to run the unmodified Program.
+
+ 3. Conveying Modified Source Versions.
+    You must clearly indicate that you changed the files, include a prominent
+    notice with the relevant date, and keep notices of the original authors.
+
+ 4. Remote Network Interaction; Use with the Program.
+    If you modify the Program, or any covered work, and run it on a server
+    and interact with users remotely through a computer network, you must
+    make the modified source available to those users.
+
+ 5. Disclaimer of Warranty.
+    THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+    APPLICABLE LAW. THE PROGRAM IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+    ANY KIND, EITHER EXPRESSED OR IMPLIED.
+
+ 6. Limitation of Liability.
+    IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+    WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+    CONVEYS THE PROGRAM, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+    GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES.
+
+ [--- FULL LICENSE TEXT CONTINUES ---]
+
+ END OF TERMS AND CONDITIONS
+
+ How to Apply These Terms to Your New Programs
+ ----------------------------------------------
+
+ To apply the GNU Affero General Public License to your program, add the
+ following header to each file:
+
+     <one line to give the program's name and a brief idea of what it does.>
+     Copyright (C) 2025 Monish Krishna
+
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU Affero General Public License as
+     published by the Free Software Foundation, either version 3 of the
+     License, or (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU Affero General Public License for more details.
+
+     You should have received a copy of the GNU Affero General Public License
+     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+

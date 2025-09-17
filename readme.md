@@ -58,11 +58,10 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 ```yaml
 src/
+├── Commands/ #Slash Commands
 ├── Components/ # Buttons, Modals, Review Handlers
 ├── Events/ # Client & Interaction event listeners
-├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers)
-├── Schemas/ # Mongoose Schemas (Ticket, LFP/LFT)
-├── index.js # Main entry
+├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers, Schemas)
 ```
 > [!NOTE]
 > Full explanation of folders: [Read More →](./docs/Indev.md)
@@ -170,4 +169,8 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ---
 
 ## 📜 License <a name="license"></a>
-This project is licensed under the MIT License. See [LICENSE](LICENSE)
+This project is licensed under the **GNU AGPL v3** License. See [LICENSE](LICENSE) for details.
+
+---
+
+Happy Learning! 😄

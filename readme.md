@@ -1,62 +1,95 @@
+# Apatite Bot
+
 > [!IMPORTANT]
-> This project is currently incomplete and work-in-progress
+> This project is work-in-progress. Features may change frequently until v1.0 is released.
 
-# Apatite Bot  
+A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.org) and MongoDB, designed for **ticketing, player/team matchmaking (LFP/LFT)**, and advanced moderation tools.
 
-Apatite Bot is a powerful and modular Discord bot built with Node.js and Discord.js v14. It provides advanced logging, ticketing, and utility features to help manage your Discord server efficiently.  
+---
 
-## 🚀 Project Overview  
+## 📚 Table of Contents
+- [✨ Features](#-features)
+- [📂 Project Structure](#-project-structure)
+- [🚀 Getting Started](#-getting-started)
+     - [Prerequisites](#prerequisites)
+     - [Installation](#installation)
+     - [Setup](#setup)
+- [📑 Documentation](#-documentation)
+- [🛠 Tech Stack](#-tech-stack)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
 
-Apatite Bot is designed to simplify server management with its event-driven logging system, ticketing functionality, and customizable configurations. Whether you're managing a small community or a large server, Apatite Bot ensures transparency and organization.  
 
-## ✨ Features  
+## ✨ Features <a name="features"></a>
 
-### Logging System  
-- Tracks server events:  
-    - Channel create/update/delete  
-    - Role create/update/delete  
-    - Member join/leave/role changes  
-    - Voice state changes  
-    - Message delete/bulk delete  
-- Configurable logging channels for server, member, voice, message, and ticket logs.  
-- Standardized embed styling for clear and professional logs.  
+- 🎫 **Ticket System**
+  - Create, close, reopen, and manage support tickets
+  - Appeals, transcripts, and moderation workflow
+  - [Read More →](./docs/Indev.md)
 
-### Ticketing System  
-- Create, close, delete, and reopen tickets with interactive buttons.  
-- Generates transcripts for closed tickets.  
-- MongoDB integration for ticket persistence.  
+- 👥 **LFP / LFT System**
+  - Submit requests for **Looking For Players (LFP)** or **Looking For Team (LFT)**
+  - Staff review system with approvals/declines
+  - Automatic posting to public channels
+  - User controls: create, list, cancel, resend
+  - [Read More →](./docs/Indev.md)
 
-### Utilities  
-- `LogManager` utility for creating standardized embeds and handling audit logs.  
-- Modular event and component handler structure for scalability.  
+- 🛡 **Moderation Tools**
+  - Staff-only review handling
+  - Role-based permissions
+  - Action logging system
+  - [Read More →](./docs/Indev.md)
 
-## 🛠️ Installation  
+- 📜 **Logger**
+  - Logs channel, message, member, and role events
+  - Detailed audit trail
+  - [Read More →](./docs/Indev.md)
 
-1. Clone the repository:  
-     ```bash  
-     git clone https://github.com/MonishKrishna2009/Apatite-Bot.git
-     cd apatite-bot  
-     ```  
+- ⚙️ **Configurable Structure**
+  - Organized handlers for commands, events, and components
+  - Easy-to-manage config files
+  - [Read More →](./docs/Indev.md)
 
-2. Install dependencies:  
-     ```bash  
-     bun install
-     ```  
+> [!TIP]
+> Each system has its own dedicated `.md` file inside `/docs`. Start there if you’re exploring a specific feature.
+---
 
-3. Set up the configuration file:  
-     - Rename `.env.example` to `.env`.  
-     - Fill in the required fields (see [Configuration](#gear-configuration)).  
+## 📂 Project Structure <a name="project-structure"></a>
 
-4. Start the bot:  
-     ```bash  
-     bun .  
-     ```  
+```yaml
+src/
+├── Components/ # Buttons, Modals, Review Handlers
+├── Events/ # Client & Interaction event listeners
+├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers)
+├── Schemas/ # Mongoose Schemas (Ticket, LFP/LFT)
+├── index.js # Main entry
+```
+> [!NOTE]
+> Full explanation of folders: [Read More →](./docs/Indev.md)
 
-## ⚙️ Configuration  
+---
 
-The `.env` file contains all the necessary settings for the bot. Here's an example:  
+## 🚀 Getting Started <a name="getting-started"></a>
 
+### Prerequisites <a name="prerequisites"></a>
+- A Discord Bot - [Tutorial](./docs/Indev.md)
+- Installation of Bun - [Tutorial](./docs/Indev.md)
+- MongoDB Database - [Tutorial](./docs/Indev.md)
+- Git - [Tutorial](./docs/Indev.md)
+
+> [!CAUTION]
+> Ensure **MongoDB** is running before starting the bot, otherwise commands may fail.
+
+### Installation <a name="installation"></a>
 ```bash
+git clone https://github.com/MonishKrishna2009/Apatite-Bot.git
+cd apatite-bot
+bun install
+```
+### Setup <a name="setup"></a>
+
+1. Copy `.env.example` → `.env` and configure:
+```env
 # Discord Stuff
 TOKEN = ""
 CLIENT_ID = ""
@@ -82,11 +115,16 @@ TICKET_DASH_CHANNEL_ID = ""
 TICKET_SUPPORT_ROLE_ID = ""
 TICKET_TRANSCRIPT_CHANEL_ID = ""
 TICKET_CATEGORY = ""
+
+#LFP LFT Stuff
+VALO_LFP_LFT_CHANNEL_ID = ""
+VALO_LF_REVIEW_CHANNEL_ID = ""
+VALO_LF_MOD_ROLE_ID = ""
 ```
 
-You also need to fill your necessary details in the config.js file inside Structure/Configs folder (I have included the space you probably need to fill)
-
-```javascript
+2. Fill your dev user/dev guild details in `config.js`
+```js
+    // Bot admins and developers
     developers: [
         {
             name: "Monk",
@@ -100,27 +138,36 @@ You also need to fill your necessary details in the config.js file inside Struct
         },
       ],
 ```
+3. Run
+```bash
+bun .
+```
+> [!WARNING]
+> Never commit your `.env` file. It contains sensitive tokens.
 
-## ▶️ Usage  
+---
 
-1. Start the bot:  
-     ```bash  
-     bun . 
-     ```  
+## 📑 Documentation <a name="documentation"></a>
+- [Ticket System](./docs/Indev.md)
+- [Lfp/Lft System](./docs/Indev.md)
+- [Moderation](./docs/Indev.md)
+- [Logger](./docs/Indev.md)
+- [Structure](./docs/Indev.md)
+- [Handler](./docs/Indev.md)
+- [Config](./docs/Indev.md)
 
-2. Try the following: 
-     - Create a ticket panel by running the command (Make sure to edit the context to your needs!)
-     - Create a ticket by clicking the "Create Ticket" button.
-     - Try out the Logging systems etc.. 
+---
 
-# WORK IN PROGRESS DOCUMENTATION PLEASE DONT REFER AT THIS POINT.
+## 🛠 Tech Stack <a name="tech-stack"></a>
+- [discord.js V14](https://discord.js.org)
+- [MongoDB](https://www.mongodb.com)
 
-## 🤝 Contributing  
+---
 
-Contributions are welcome! Fork the repository, make your changes, and submit a pull request.  
+## 🤝 Contributing <a name="contribution"></a>
+Contributions are welcome! Please open an issue or submit a pull request.
 
-## 📄 License  
+---
 
-[![Custom: MIT License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## 📜 License <a name="license"></a>
+This project is licensed under the MIT License. See [LICENSE](LICENSE)

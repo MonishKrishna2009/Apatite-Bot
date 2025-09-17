@@ -171,7 +171,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ---
 
 ## 📜 License <a name="license"></a>
-This project is licensed under the **GNU AGPL v3** License. See [LICENSE](LICENSE) for details.
+This project is licensed under the **Apache-2.0** License. See [LICENSE](LICENSE) for details.
 
 ---
 

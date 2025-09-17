@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This project is currently incomplete and work-in-progress
+
 # Apatite Bot  
 
 Apatite Bot is a powerful and modular Discord bot built with Node.js and Discord.js v14. It provides advanced logging, ticketing, and utility features to help manage your Discord server efficiently.  

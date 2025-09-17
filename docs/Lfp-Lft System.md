@@ -27,9 +27,14 @@ flowchart TD
     A[User wants to manage their requests] --> B{What action do they want to take?}
     B -- List Requests --> C[Bot lists all active requests]
     B -- Cancel Request --> D[User selects request to cancel]
-    D --> E[Bot checks if the request is active (ie: not archived/expired)]
-    E -- Yes --> F[Bot cancels the request and notifies the user]
+    D --> E[Bot checks if the request is active ie: not archived/expired]
+    E -- Yes --> F[Bot checks if the request is already approved and posted in public channel]
+    F -- Approved --> G[Bot deletes public channel message and deletes the database entry]
+    F -- Pending --> G[Bot removes the review message from the review channel and deletes the databse entry]
     E -- No --> G[Bot notifies the user that the request cannot be cancelled]
+    B -- Resend Request --> H[Bot checks if the request is active ie: not archived/expired]
+    H -- Active --> I[Bot declines the resend request as request is already active]
+    H -- Inactive --> I[Bot resends the post to the review channel for review and updates the database]
 ```
 
 ---

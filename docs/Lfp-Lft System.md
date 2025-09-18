@@ -38,7 +38,7 @@ flowchart TD
     B -- List Requests --> C([Bot lists all active requests]):::success
 
     B -- Cancel Request --> D([User selects request to cancel]):::user
-    D --> E{Is the request active (not archived/expired)?}:::decision
+    D --> E{Is the request active ie: not archived/expired?}:::decision
 
     E -- Yes --> F{Is the request approved and posted in public channel?}:::decision
     F -- Approved --> G([Bot deletes public channel message and deletes DB entry]):::success

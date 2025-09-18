@@ -12,29 +12,50 @@ This system allows users to post "Looking For Players" (LFP) or "Looking For Tea
 ### User posting a request and staff review process
 ```mermaid
 flowchart TD
-    A[User submits LFP/LFT request] --> B{Is the request valid?}
-    B -- Yes --> C[Staff reviews the request]
-    B -- No --> D[User is notified of invalid request]
-    C --> E{Staff approves or declines?}
-    E -- Approve --> F[Request is posted in public channel and user is notified]
-    E -- Decline --> G[User is notified of decline]
-    F --> H[Other users view and contact the poster]
+    A([User submits LFP/LFT request]):::user --> B{Is the request valid?}:::decision
+    
+    B -- Yes --> C([Staff reviews the request]):::success
+    B -- No --> D([User is notified of invalid request]):::error
+    
+    C --> E{Did staff approve the request?}:::decision
+    E -- Approve --> F([Request posted in public channel & user notified]):::success
+    E -- Decline --> G([User is notified of decline]):::error
+    
+    F --> H([Other users view and contact the poster]):::success
+
+    %% Styles
+    classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
+    classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
+    classDef success fill:#27AE60,stroke:#14532D,color:#fff;
+    classDef error fill:#E74C3C,stroke:#7B241C,color:#fff;
 ```
 
 ### User managing their requests
 ```mermaid
 flowchart TD
-    A[User wants to manage their requests] --> B{What action do they want to take?}
-    B -- List Requests --> C[Bot lists all active requests]
-    B -- Cancel Request --> D[User selects request to cancel]
-    D --> E[Bot checks if the request is active ie: not archived/expired]
-    E -- Yes --> F[Bot checks if the request is already approved and posted in public channel]
-    F -- Approved --> G[Bot deletes public channel message and deletes the database entry]
-    F -- Pending --> H[Bot removes the review message from the review channel and deletes the database entry]
-    E -- No --> I[Bot notifies the user that the request cannot be cancelled]
-    B -- Resend Request --> J[Bot checks if the request is active ie: not archived/expired]
-    J -- Active --> K[Bot declines the resend request as request is already active]
-    J -- Inactive --> L[Bot resends the post to the review channel for review and updates the database]
+    A([User wants to manage their requests]):::user --> B{What action do they want to take?}:::decision
+
+    B -- List Requests --> C([Bot lists all active requests]):::success
+
+    B -- Cancel Request --> D([User selects request to cancel]):::user
+    D --> E{Is the request active (not archived/expired)?}:::decision
+
+    E -- Yes --> F{Is the request approved and posted in public channel?}:::decision
+    F -- Approved --> G([Bot deletes public channel message and deletes DB entry]):::success
+    F -- Pending --> H([Bot removes review message and deletes DB entry]):::success
+
+    E -- No --> I([Bot notifies the user that the request cannot be cancelled]):::error
+
+    B -- Resend Request --> J{Is the request active?}:::decision
+    J -- Active --> K([Bot declines resend request as request is already active]):::error
+    J -- Inactive --> L([Bot resends post to review channel and updates DB]):::success
+
+    %% Styles
+    classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
+    classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
+    classDef success fill:#27AE60,stroke:#14532D,color:#fff;
+    classDef error fill:#E74C3C,stroke:#7B241C,color:#fff;
+
 ```
 
 ---

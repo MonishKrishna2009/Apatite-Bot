@@ -14,7 +14,7 @@ class ValoLFTModal extends Component {
     async execute(interaction) {
         const { guild, user } = interaction;
 
-        // 🧹 On-demand cleanup for expired requests
+        // 🧹 On-demand cleanup for expired and archived requests
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() - config.RequestExpiryDays);
 
@@ -23,10 +23,24 @@ class ValoLFTModal extends Component {
                 userId: user.id,
                 guildId: guild.id,
                 type: "LFT",
-                status: { $in: ["pending", "approved"] },
+                status: { $in: ["pending"] },
                 createdAt: { $lt: expiryDate }
             },
             { $set: { status: "expired" } }
+        );
+
+        const archiveDate = new Date();
+        archiveDate.setDate(archiveDate.getDate() - config.RequstArchiveDays)
+
+        await LFRequest.updateMany(
+            {
+                userId: user.id,
+                guildId: guild.id,
+                type: "LFT",
+                status: { $in: ["approved"] },
+                createdAt: { $lt: archiveDate }
+            },
+            { $set: { status: "archived" } }
         );
 
 

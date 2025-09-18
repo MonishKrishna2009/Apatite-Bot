@@ -81,17 +81,23 @@ flowchart TD
 ### Failsafe Cleanup (On-Demand Cleanup)
 ```mermaid
 flowchart TD
-    A([User sends a request via modal]):::process --> B([Calculate expiry date on previous request from the same user]):::process
-    B --> C([Find requests older than expiry threshold]):::process
-    C --> D{Any expired requests found?}:::decision
-    D -- Yes --> E([Mark expired in DB & delete posts]):::success
-    D -- No --> F([No action required]):::neutral
+    A([User sends a request via modal]):::process --> B{Check old request from the same user}:::decision
+
+    B -- Pending --> C{Older than RequestExpiryDays?}:::decision
+    C -- Yes --> D([Set status → Expired]):::expired
+    C -- No --> E([Keep as Pending]):::pending
+
+    B -- Approved --> F{Older than RequestArchiveDays?}:::decision
+    F -- Yes --> G([Set status → Archived]):::archived
+    F -- No --> H([Keep as Approved]):::approved
 
     %% Styles
     classDef process fill:#8E44AD,stroke:#4A235A,color:#fff;
     classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
-    classDef success fill:#27AE60,stroke:#14532D,color:#fff;
-    classDef neutral fill:#95A5A6,stroke:#2C3E50,color:#fff;
+    classDef expired fill:#E74C3C,stroke:#7B241C,color:#fff;
+    classDef archived fill:#34495E,stroke:#1C2833,color:#fff;
+    classDef pending fill:#3498DB,stroke:#1B4F72,color:#fff;
+    classDef approved fill:#27AE60,stroke:#14532D,color:#fff;
 ```
 
 ---

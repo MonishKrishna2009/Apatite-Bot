@@ -34,6 +34,7 @@ module.exports = {
     lfplftModroleId: process.env.LF_MOD_ROLE_ID,
     MaxActiveRequest: 10,
     RequestExpiryDays: 7,
+    RequstArchiveDays: 30,
 
 
     // Bot admins and developers

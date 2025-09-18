@@ -23,10 +23,24 @@ class ValoLFPModal extends Component {
                 userId: user.id,
                 guildId: guild.id,
                 type: "LFP",
-                status: { $in: ["pending", "approved"] },
+                status: { $in: ["pending"] },
                 createdAt: { $lt: expiryDate }
             },
             { $set: { status: "expired" } }
+        );
+
+        const archiveDate = new Date();
+        archiveDate.setDate(archiveDate.getDate() - config.RequstArchiveDays)
+
+        await LFRequest.updateMany(
+            {
+                userId: user.id,
+                guildId: guild.id,
+                type: "LFP",
+                status: { $in: ["approved"] },
+                createdAt: { $lt: archiveDate }
+            },
+            { $set: { status: "archived" } }
         );
 
         // ✅ Count active requests after cleanup

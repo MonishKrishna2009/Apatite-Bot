@@ -22,9 +22,10 @@ flowchart TD
     
     C --> E{Did staff approve the request?}:::decision
     E -- Approve --> F([Request posted in public channel & user notified]):::success
-    E -- Decline --> G([User is notified of decline]):::error
+    E -- Decline --> G([Staff fills in reason for decline]):::process
+    G --> H([User is notified of decline with reason]):::error
     
-    F --> H([Other users view and contact the poster]):::success
+    F --> I([Other users view and contact the poster]):::success
 
     %% Styles
     classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
@@ -42,7 +43,7 @@ flowchart TD
     B -- List --> C([Bot lists all active requests]):::success
 
     B -- Cancel --> D([User selects request]):::user
-    D --> E{Is the request active? (not archived/expired)}:::decision
+    D --> E{Is the request active? ie: not archived/expired}:::decision
     E -- Yes --> F{Was it approved & posted?}:::decision
     F -- Approved --> G([Bot deletes public post & removes DB entry]):::success
     F -- Pending --> H([Bot deletes review post & removes DB entry]):::success
@@ -109,26 +110,25 @@ flowchart TD
 
 ## 📸 Showcase
 
-### LFT modal example for Valorant
+### Request submission modal (Valorant LFT example)
 ![LFT Modal Example](./assets/lft-lfp/lft-modal-valorant.png)
 
-### Request submission confirmation
+### Submission confirmation
 ![Request Submission Confirmation](./assets/lft-lfp/request-submission-confirmation.png)
 
-### Staff review channel with pending requests
+### Staff review channel
 ![Staff Review Channel](./assets/lft-lfp/staff-review-channel.png)
 
-### Public channel with approved requests
+### Public channel (approved requests)
 ![Public Channel with Approved Requests](./assets/lft-lfp/public-channel-approved-requests.png)
 
-### User notification of approved request
+### User notification: approved
 ![User Notification of Approved Request](./assets/lft-lfp/user-notification-approved-request.png)
 
-### User notification of declined request
+### User notification: declined
 ![User Notification of Declined Request](./assets/lft-lfp/user-notification-declined-request.png)
 
 ### Active requests list command
 ![Active Requests List Command](./assets/lft-lfp/active-requests-list-command.png)
 
-### 
 

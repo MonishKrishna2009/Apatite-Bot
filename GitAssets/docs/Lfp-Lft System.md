@@ -61,6 +61,39 @@ flowchart TD
 
 ```
 
+### Failsafe Cleanup (User Leaves)
+```mermaid
+flowchart TD
+    A([User leaves the server]):::user --> B([System detects member removal]):::process
+    B --> C([Find all active LFP/LFT requests by user]):::process
+    C --> D{Do requests exist?}:::decision
+    D -- Yes --> E([Delete staff review posts, public posts, and DB entries]):::success
+    D -- No --> F([No action required]):::neutral
+
+    %% Styles
+    classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
+    classDef process fill:#8E44AD,stroke:#4A235A,color:#fff;
+    classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
+    classDef success fill:#27AE60,stroke:#14532D,color:#fff;
+    classDef neutral fill:#95A5A6,stroke:#2C3E50,color:#fff;
+```
+
+### Failsafe Cleanup (On-Demand Cleanup)
+```mermaid
+flowchart TD
+    A([User sends a request via modal]):::process --> B([Calculate expiry date on previous request from the same user]):::process
+    B --> C([Find requests older than expiry threshold]):::process
+    C --> D{Any expired requests found?}:::decision
+    D -- Yes --> E([Mark expired in DB & delete posts]):::success
+    D -- No --> F([No action required]):::neutral
+
+    %% Styles
+    classDef process fill:#8E44AD,stroke:#4A235A,color:#fff;
+    classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
+    classDef success fill:#27AE60,stroke:#14532D,color:#fff;
+    classDef neutral fill:#95A5A6,stroke:#2C3E50,color:#fff;
+```
+
 ---
 
 ## 🤖 Commands

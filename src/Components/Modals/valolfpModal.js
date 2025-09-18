@@ -14,22 +14,60 @@ class ValoLFPModal extends Component {
     async execute(interaction) {
         const { guild, user } = interaction;
 
+        // 🧹 On-demand cleanup for expired requests
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() - config.RequestExpiryDays);
+
+        await LFRequest.updateMany(
+            {
+                userId: user.id,
+                guildId: guild.id,
+                type: "LFP",
+                status: { $in: ["pending", "approved"] },
+                createdAt: { $lt: expiryDate }
+            },
+            { $set: { status: "expired" } }
+        );
+
+        // ✅ Count active requests after cleanup
+        const activeRequest = await LFRequest.countDocuments({
+            userId: user.id,
+            guildId: guild.id,
+            type: "LFP",
+            status: { $in: ["pending", "approved"] }
+        });
+
+        if (activeRequest >= config.MaxActiveRequest) {
+            const limitEmbed = new EmbedBuilder()
+                .setTitle("⚠️ Request Limit Reached")
+                .setColor(Colors.Red)
+                .setDescription(
+                    `You already have **${activeRequest} active LFP requests**. The maximum allowed is **${config.MaxActiveRequest}**.\n\n` +
+                    `Please cancel or wait for existing requests to expire before creating new ones.`
+                )
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral });
+        }
+
         const teamName = interaction.fields.getTextInputValue("teamName");
         const rolesNeeded = interaction.fields.getTextInputValue("rolesNeeded");
         const peekRank = interaction.fields.getTextInputValue("peekRank");
         const currentRank = interaction.fields.getTextInputValue("currentRank");
         const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
 
-        // Save to DB
+        // 💾 Save to DB
         const req = await LFRequest.create({
             userId: user.id,
             guildId: guild.id,
             type: "LFP",
             game: "Valorant",
+            status: "pending",
+            createdAt: new Date(),
             content: { teamName, rolesNeeded, peekRank, currentRank, additionalInfo }
         });
 
-        // Review Embed
+        // 📩 Review Embed
         const embed = new EmbedBuilder()
             .setTitle("👥 LFP Request (Pending Review)")
             .setThumbnail(user.displayAvatarURL({ dynamic: true }))
@@ -56,15 +94,16 @@ class ValoLFPModal extends Component {
         req.messageId = msg.id;
         await req.save();
 
+        // ✅ User feedback
         const replyEmbed = new EmbedBuilder()
             .setTitle("✅ Request Submitted")
             .setColor(Colors.Green)
             .setDescription("Your request has been submitted and is pending review by our staff team. You will be notified once it has been reviewed.")
             .setFooter({ text: `Request ID: ${req._id}` })
             .setTimestamp();
-        await interaction.reply({embeds: [replyEmbed], flags: MessageFlags.Ephemeral });
+        await interaction.reply({ embeds: [replyEmbed], flags: MessageFlags.Ephemeral });
 
-        // DM requested details to the user as confirmation
+        // 📩 DM confirmation
         const dmEmbed = new EmbedBuilder()
             .setTitle("👥 LFP Request Submitted")
             .setColor(Colors.Blue)

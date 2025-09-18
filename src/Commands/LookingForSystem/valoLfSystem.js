@@ -1,5 +1,5 @@
 const Command = require("../../Structure/Handlers/BaseCommand");
-const { SlashCommandBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
+const { SlashCommandBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require("discord.js");
 
 class LFSys extends Command {
     constructor(client) {
@@ -20,6 +20,13 @@ class LFSys extends Command {
 
     async execute(interaction, client) {
         const sub = interaction.options.getSubcommand();
+
+        if (config.lfpLftSystem !== true) {
+            return interaction.reply({
+                content: " ❌ LFP/LFT system is disabled",
+                flags: MessageFlags.Ephemeral
+            });
+        }
 
         if (sub === "players") {
             const modal = new ModalBuilder()

@@ -15,12 +15,13 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
      - [Installation](#installation)
      - [Setup](#setup)
 - [📑 Documentation](#-documentation)
-- [🛠 Tech Stack](#-tech-stack)
+- [🛠 Tech Stack](#-tech-stack)d
+- [✨ Star History](#-star-history)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 
 
-## ✨ Features <a name="features"></a>
+## ✨ Features 
 
 - 👥 **LFP / LFT System**
   - Submit requests for **Looking For Players (LFP)** or **Looking For Team (LFT)**
@@ -54,7 +55,7 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 > Each system has its own dedicated `.md` file inside `/docs`. Start there if you’re exploring a specific feature.
 ---
 
-## 📂 Project Structure <a name="project-structure"></a>
+## 📂 Project Structure 
 
 ```yaml
 src/
@@ -68,9 +69,9 @@ src/
 
 ---
 
-## 🚀 Getting Started <a name="getting-started"></a>
+## 🚀 Getting Started 
 
-### Prerequisites <a name="prerequisites"></a>
+### Prerequisites 
 - A Discord Bot - [Tutorial](./GitAssets/docs/Discord-bot-creation.md)
 - Installation of Bun - [Tutorial](https://bun.com/docs/installation)
 - MongoDB Database - [Tutorial](./GitAssets/docs/MongoDB.md)
@@ -79,13 +80,13 @@ src/
 > [!CAUTION]
 > Ensure **MongoDB** is running before starting the bot, otherwise commands may fail.
 
-### Installation <a name="installation"></a>
+### Installation 
 ```bash
 git clone https://github.com/MonishKrishna2009/Apatite-Bot.git
 cd apatite-bot
 bun install
 ```
-### Setup <a name="setup"></a>
+### Setup 
 
 1. Copy `.env.example` → `.env` and configure:
 ```env
@@ -146,7 +147,7 @@ bun .
 
 ---
 
-## 📑 Documentation <a name="documentation"></a>
+## 📑 Documentation 
 - [Ticket System](./GitAssets/Indev.md)
 - [Lfp/Lft System](./GitAssets/Lfp-Lft%20System.md)
 - [Moderation](./GitAssets/Indev.md)
@@ -157,7 +158,7 @@ bun .
 
 ---
 
-## 🛠 Tech Stack <a name="tech-stack"></a>
+## 🛠 Tech Stack 
 - [discord.js V14](https://discord.js.org)
 - [MongoDB](https://www.mongodb.com)
 
@@ -173,14 +174,10 @@ bun .
 
 ---
 
-## 🤝 Contributing <a name="contribution"></a>
+## 🤝 Contributing 
 Contributions are welcome! Please open an issue or submit a pull request.
 
 ---
 
-## 📜 License <a name="license"></a>
+## 📜 License 
 This project is licensed under the **Apache-2.0** License. See [LICENSE](LICENSE) for details.
-
----
-
-Happy Learning! 😄

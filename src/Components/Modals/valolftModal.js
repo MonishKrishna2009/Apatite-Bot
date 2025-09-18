@@ -13,6 +13,44 @@ class ValoLFTModal extends Component {
 
     async execute(interaction) {
         const { guild, user } = interaction;
+
+        // 🧹 On-demand cleanup for expired requests
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() - config.RequestExpiryDays);
+
+        await LFRequest.updateMany(
+            {
+                userId: user.id,
+                guildId: guild.id,
+                type: "LFT",
+                status: { $in: ["pending", "approved"] },
+                createdAt: { $lt: expiryDate }
+            },
+            { $set: { status: "expired" } }
+        );
+
+
+        // ✅ Count active requests after cleanup
+        const activeRequest = await LFRequest.countDocuments({
+            userId: user.id,
+            guildId: guild.id,
+            type: "LFT",
+            status: { $in: ["pending", "approved"] }
+        })
+
+        if (activeRequest >= config.MaxActiveRequest) {
+            const limitEmbed = new EmbedBuilder()
+                .setTitle("⚠️ Request Limit Reached")
+                .setColor(Colors.Red)
+                .setDescription(
+                    `You already have **${activeRequest} active LFP requests**. The maximum allowed is **${config.MaxActiveRequest}**.\n\n` +
+                    `Please cancel or wait for existing requests to expire before creating new ones.`
+                )
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral });
+        }
+
         const riotID = interaction.fields.getTextInputValue("riotID");
         const rolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");
         const peekRank = interaction.fields.getTextInputValue("peekRank");

@@ -6,6 +6,8 @@ const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
 
+const {cleanupRequests} = require("../../Structure/Functions/requestCleanup")
+
 class ValoLFTModal extends Component {
     constructor(client) {
         super(client, { id: "valolftModal" });
@@ -14,35 +16,8 @@ class ValoLFTModal extends Component {
     async execute(interaction) {
         const { guild, user } = interaction;
 
-        // 🧹 On-demand cleanup for expired and archived requests
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() - config.RequestExpiryDays);
-
-        await LFRequest.updateMany(
-            {
-                userId: user.id,
-                guildId: guild.id,
-                type: "LFT",
-                status: { $in: ["pending"] },
-                createdAt: { $lt: expiryDate }
-            },
-            { $set: { status: "expired" } }
-        );
-
-        const archiveDate = new Date();
-        archiveDate.setDate(archiveDate.getDate() - config.RequstArchiveDays)
-
-        await LFRequest.updateMany(
-            {
-                userId: user.id,
-                guildId: guild.id,
-                type: "LFT",
-                status: { $in: ["approved"] },
-                createdAt: { $lt: archiveDate }
-            },
-            { $set: { status: "archived" } }
-        );
-
+        // 🧹 On-demand cleanup for expired & archived requests
+        cleanupRequests(guild, user.id, "LFT", config.valoPublicChannelId, config)
 
         // ✅ Count active requests after cleanup
         const activeRequest = await LFRequest.countDocuments({

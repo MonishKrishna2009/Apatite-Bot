@@ -88,8 +88,8 @@ flowchart TD
     C -- No --> E([Keep as Pending]):::pending
 
     B -- Approved --> F{Older than RequestArchiveDays?}:::decision
-    F -- Yes --> G([Set status → Archived]):::archived
-    F -- No --> H([Keep as Approved]):::approved
+    F -- Yes --> G([Set status → Archived]):::archived --> H([Delete Public Channel Embed]):::cleanup
+    F -- No --> I([Keep as Approved]):::approved
 
     %% Styles
     classDef process fill:#8E44AD,stroke:#4A235A,color:#fff;
@@ -98,6 +98,7 @@ flowchart TD
     classDef archived fill:#34495E,stroke:#1C2833,color:#fff;
     classDef pending fill:#3498DB,stroke:#1B4F72,color:#fff;
     classDef approved fill:#27AE60,stroke:#14532D,color:#fff;
+    classDef cleanup fill:#95A5A6,stroke:#2C3E50,color:#fff;
 ```
 
 ---

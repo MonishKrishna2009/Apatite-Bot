@@ -32,7 +32,7 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
   - Staff review system with approvals/declines
   - Automatic posting to public channels
   - User controls: create, list, cancel, resend
-  - [Read More →](./docs/Indev.md)
+  - [Read More →](./docs/docs/Lfp-Lft%20System.md)
 
 - 🛡 **Moderation Tools**
   - Staff-only review handling
@@ -71,7 +71,7 @@ src/
 ## 🚀 Getting Started <a name="getting-started"></a>
 
 ### Prerequisites <a name="prerequisites"></a>
-- A Discord Bot - [Tutorial](./docs/Indev.md)
+- A Discord Bot - [Tutorial](./docs/docs/Discord-bot-creation.md)
 - Installation of Bun - [Tutorial](https://bun.com/docs/installation)
 - MongoDB Database - [Tutorial](./docs/Indev.md)
 - Git - [Tutorial](https://github.com/git-guides/install-git)

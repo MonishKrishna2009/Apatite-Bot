@@ -111,24 +111,24 @@ flowchart TD
 ## 📸 Showcase
 
 ### Request submission modal (Valorant LFT example)
-![LFT Modal Example](./assets/lft-lfp/lft-modal-valorant.png)
+![LFT Modal Example](../assets/lft-lfp/lft-modal-valorant.png)
 
 ### Submission confirmation
-![Request Submission Confirmation](./assets/lft-lfp/request-submission-confirmation.png)
+![Request Submission Confirmation](../assets/lft-lfp/request-submission-confirmation.png)
 
 ### Staff review channel
-![Staff Review Channel](./assets/lft-lfp/staff-review-channel.png)
+![Staff Review Channel](../assets/lft-lfp/staff-review-channel.png)
 
 ### Public channel (approved requests)
-![Public Channel with Approved Requests](./assets/lft-lfp/public-channel-approved-requests.png)
+![Public Channel with Approved Requests](../assets/lft-lfp/public-channel-approved-requests.png)
 
 ### User notification: approved
-![User Notification of Approved Request](./assets/lft-lfp/user-notification-approved-request.png)
+![User Notification of Approved Request](../assets/lft-lfp/user-notification-approved-request.png)
 
 ### User notification: declined
-![User Notification of Declined Request](./assets/lft-lfp/user-notification-declined-request.png)
+![User Notification of Declined Request](../assets/lft-lfp/user-notification-declined-request.png)
 
 ### Active requests list command
-![Active Requests List Command](./assets/lft-lfp/active-requests-list-command.png)
+![Active Requests List Command](../assets/lft-lfp/active-requests-list-command.png)
 
 

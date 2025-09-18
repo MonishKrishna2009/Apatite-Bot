@@ -54,3 +54,5 @@ class LFUpdate extends Event {
         }
     }
 }
+
+module.exports = LFUpdate

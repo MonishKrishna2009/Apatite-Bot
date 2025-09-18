@@ -21,7 +21,7 @@ class LFSys extends Command {
     async execute(interaction, client) {
         const sub = interaction.options.getSubcommand();
 
-        if (config.lfpLftSystem !== true) {
+        if (this.client.config.lfpLftSystem !== true) {
             return interaction.reply({
                 content: " ❌ LFP/LFT system is disabled",
                 flags: MessageFlags.Ephemeral

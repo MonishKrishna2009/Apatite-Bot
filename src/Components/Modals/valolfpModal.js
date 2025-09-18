@@ -7,6 +7,7 @@ const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
 
 const {cleanupRequests} = require("../../Structure/Functions/requestCleanup")
+const {checkActiveRequests} = require("../../Structure/Functions/activeRequest")
 
 class ValoLFPModal extends Component {
     constructor(client) {
@@ -19,27 +20,8 @@ class ValoLFPModal extends Component {
         // 🧹 On-demand cleanup for expired & archived requests
         cleanupRequests(guild, user.id, "LFP", config.valoPublicChannelId, config)
 
-
         // ✅ Count active requests after cleanup
-        const activeRequest = await LFRequest.countDocuments({
-            userId: user.id,
-            guildId: guild.id,
-            type: "LFP",
-            status: { $in: ["pending", "approved"] }
-        });
-
-        if (activeRequest >= config.MaxActiveRequest) {
-            const limitEmbed = new EmbedBuilder()
-                .setTitle("⚠️ Request Limit Reached")
-                .setColor(Colors.Red)
-                .setDescription(
-                    `You already have **${activeRequest} active LFP requests**. The maximum allowed is **${config.MaxActiveRequest}**.\n\n` +
-                    `Please cancel or wait for existing requests to expire before creating new ones.`
-                )
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral });
-        }
+        if (checkActiveRequests(interaction, "LFP", config)) return;
 
         const teamName = interaction.fields.getTextInputValue("teamName");
         const rolesNeeded = interaction.fields.getTextInputValue("rolesNeeded");

@@ -20,25 +20,7 @@ class ValoLFTModal extends Component {
         cleanupRequests(guild, user.id, "LFT", config.valoPublicChannelId, config)
 
         // ✅ Count active requests after cleanup
-        const activeRequest = await LFRequest.countDocuments({
-            userId: user.id,
-            guildId: guild.id,
-            type: "LFT",
-            status: { $in: ["pending", "approved"] }
-        })
-
-        if (activeRequest >= config.MaxActiveRequest) {
-            const limitEmbed = new EmbedBuilder()
-                .setTitle("⚠️ Request Limit Reached")
-                .setColor(Colors.Red)
-                .setDescription(
-                    `You already have **${activeRequest} active LFP requests**. The maximum allowed is **${config.MaxActiveRequest}**.\n\n` +
-                    `Please cancel or wait for existing requests to expire before creating new ones.`
-                )
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral });
-        }
+        if (checkActiveRequests(interaction, "LFT", config)) return;
 
         const riotID = interaction.fields.getTextInputValue("riotID");
         const rolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");

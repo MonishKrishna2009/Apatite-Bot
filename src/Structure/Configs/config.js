@@ -32,9 +32,9 @@ module.exports = {
     valoReviewChannelId: process.env.VALO_LF_REVIEW_CHANNEL_ID,
     valolfpLftChannelId: process.env.VALO_LFP_LFT_CHANNEL_ID,
     lfplftModroleId: process.env.LF_MOD_ROLE_ID,
-    MaxActiveRequest: 10,
+    MaxActiveRequest: 5,
     RequestExpiryDays: 7,
-    RequstArchiveDays: 30,
+    RequestArchiveDays: 30,
 
 
     // Bot admins and developers

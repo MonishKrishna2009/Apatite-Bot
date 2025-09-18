@@ -1,20 +1,23 @@
-# 🔎 LFP/LFT System
+# 🔎 LFP / LFT System
 
 > [!IMPORTANT]
-> This page is still work in progress. Do not refer at the moment!
+> This feature is currently under active development.
+> Expect changes to command syntax and database structure in future updates.
 
-This system allows users to post "Looking For Players" (LFP) or "Looking For Team" (LFT) messages in a designated channel. Other users can then contact the users who posted these messages if they are interested in joining their team or playing together.
+The **Looking For Players (LFP) / Looking For Team (LFT)** system is designed to help gamers connect with teammates and groups efficiently. Users can submit structured requests, which are reviewed by staff before being shared in public channels.
+
+Other players can then view **approved requests** and directly contact the original poster.
 
 ---
 
-## 🌊 Flow of functionality
+## 🌊 Workflow Overview
 
-### User posting a request and staff review process
+### Request Submission & Review
 ```mermaid
 flowchart TD
     A([User submits LFP/LFT request]):::user --> B{Is the request valid?}:::decision
     
-    B -- Yes --> C([Staff reviews the request]):::success
+    B -- Yes --> C([Staff reviews the request]):::process
     B -- No --> D([User is notified of invalid request]):::error
     
     C --> E{Did staff approve the request?}:::decision
@@ -26,29 +29,28 @@ flowchart TD
     %% Styles
     classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
     classDef decision fill:#F5A623,stroke:#7A4A00,color:#fff;
+    classDef process fill:#8E44AD,stroke:#4A235A,color:#fff;
     classDef success fill:#27AE60,stroke:#14532D,color:#fff;
     classDef error fill:#E74C3C,stroke:#7B241C,color:#fff;
 ```
 
-### User managing their requests
+### Request Management (User Controls)
 ```mermaid
 flowchart TD
-    A([User wants to manage their requests]):::user --> B{What action do they want to take?}:::decision
+    A([User wants to manage their requests]):::user --> B{Which action?}:::decision
 
-    B -- List Requests --> C([Bot lists all active requests]):::success
+    B -- List --> C([Bot lists all active requests]):::success
 
-    B -- Cancel Request --> D([User selects request to cancel]):::user
-    D --> E{Is the request active ie: not archived/expired?}:::decision
+    B -- Cancel --> D([User selects request]):::user
+    D --> E{Is the request active? (not archived/expired)}:::decision
+    E -- Yes --> F{Was it approved & posted?}:::decision
+    F -- Approved --> G([Bot deletes public post & removes DB entry]):::success
+    F -- Pending --> H([Bot deletes review post & removes DB entry]):::success
+    E -- No --> I([User notified: Cannot cancel]):::error
 
-    E -- Yes --> F{Is the request approved and posted in public channel?}:::decision
-    F -- Approved --> G([Bot deletes public channel message and deletes DB entry]):::success
-    F -- Pending --> H([Bot removes review message and deletes DB entry]):::success
-
-    E -- No --> I([Bot notifies the user that the request cannot be cancelled]):::error
-
-    B -- Resend Request --> J{Is the request active?}:::decision
-    J -- Active --> K([Bot declines resend request as request is already active]):::error
-    J -- Inactive --> L([Bot resends post to review channel and updates DB]):::success
+    B -- Resend --> J{Is the request active?}:::decision
+    J -- Active --> K([Declined: Already active]):::error
+    J -- Inactive --> L([Request reposted for review & DB updated]):::success
 
     %% Styles
     classDef user fill:#4A90E2,stroke:#1C3D6E,color:#fff;
@@ -76,37 +78,36 @@ flowchart TD
 
 ## 📅 Database Structure
 ```yaml
-    userId: { type: String, required: true },
-    guildId: { type: String, required: true },
-    type: { type: String, enum: ["LFP", "LFT"], required: true },
-    game: { type: String,required: true },
-    content: { type: Object, required: true }, // Store form details
-    status: { type: String, enum: ["pending", "approved", "declined", "archived", "expired"], default: "pending" },
-    reviewedBy: { type: String, default: null },
-    messageId: { type: String, default: null }, // Review channel message
-    publicMessageId: { type: String, default: null }, // Public channel message
-    createdAt: { type: Date, default: Date.now }
+    userId:          String (required)
+    guildId:         String (required)
+    type:            Enum("LFP", "LFT") (required)
+    game:            String (required)
+    content:         Object (form details, required)
+    status:          Enum("pending", "approved", "declined", "archived", "expired") (default: "pending")
+    reviewedBy:      String (nullable, staff ID)
+    messageId:       String (nullable, staff review message ID)
+    publicMessageId: String (nullable, public channel post ID)
+    createdAt:       Date (default: now)
 ```
 
 ---
 
-## ⚒️ Moderation and Review Process
-- Staff members can review pending LFP/LFT requests in a dedicated review channel.
-- They can approve or decline requests using buttons.
-- Approved requests are automatically posted in a public channel.
-- Declined requests notify the user.
-- Staff can archive or expire old requests to keep the public channel clean.
-- The bot logs all actions for accountability.
-- Staff roles and permissions are configurable to control who can review and manage requests.
-- The system includes rate limiting to prevent spam and abuse.
-- Users can only have a limited number of active requests at a time.
+## ⚒️ Moderation & Review
+- 🛡 Staff review channel for pending requests
+- ✅ Approve → Request posted to public channel
+- ❌ Decline → User notified automatically
+- 📦 Old requests can be archived/expired
+- 📑 Actions are logged for accountability
+- 🔒 Role-based permissions for staff reviewers
+- ⏳ Built-in rate limiting to prevent spam
+- 🔢 Users may only hold a limited number of active requests
 
 > [!NOTE]
 > Ensure to configure the necessary environment variables and database connections as per the main documentation to enable this system.
 
 ---
 
-## 📸 Showcase of system
+## 📸 Showcase
 
 ### LFT modal example for Valorant
 ![LFT Modal Example](./assets/lft-lfp/lft-modal-valorant.png)
@@ -128,4 +129,6 @@ flowchart TD
 
 ### Active requests list command
 ![Active Requests List Command](./assets/lft-lfp/active-requests-list-command.png)
+
+### 
 

@@ -15,7 +15,7 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
      - [Installation](#installation)
      - [Setup](#setup)
 - [📑 Documentation](#-documentation)
-- [🛠 Tech Stack](#-tech-stack)d
+- [🛠 Tech Stack](#-tech-stack)
 - [✨ Star History](#-star-history)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)

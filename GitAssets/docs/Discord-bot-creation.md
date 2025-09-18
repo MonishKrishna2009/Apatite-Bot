@@ -22,13 +22,13 @@
 4. Go to the **Bot** tab and click **Add Bot**.
 5. Confirm by clicking **Yes, do it!**.
 
-📸 *Example:*
+
 ![Step1](../assets/discord-bot/Step1.png)
 
 ### 🎨 Setting a Bot Icon
 - In the **Bot** tab, under **Profile Picture**, click the placeholder icon to upload your bot’s image/logo.
 
-📸 *Example:*
+
 ![Step2](../assets/discord-bot/Step2.png)
 
 ---
@@ -43,7 +43,7 @@ Discord requires enabling **Privileged Gateway Intents** for specific bot functi
    - ✅ **MESSAGE CONTENT INTENT** → Allow the bot to read message content (server messages only).
 3. Click **Save Changes**.
 
-📸 *Example:*
+
 ![Step3](../assets/discord-bot/Step3.png)
 
 > [!TIP]
@@ -65,7 +65,7 @@ To invite your bot to servers, configure OAuth2:
    - *(Add others based on your bot’s functionality)*
 4. Copy the generated URL.
 
-📸 *Example:*
+
 ![Step4](../assets/discord-bot/Step4.png)
 
 ---
@@ -75,7 +75,7 @@ To invite your bot to servers, configure OAuth2:
 2. Select the **server** where you want to add the bot.
 3. Click **Authorize** and complete the captcha.
 
-📸 *Example:*
+
 ![Step5](../assets/discord-bot/Step5.png)
 
 ---

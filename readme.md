@@ -22,33 +22,33 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 ## ✨ Features <a name="features"></a>
 
-- 🎫 **Ticket System**
-  - Create, close, reopen, and manage support tickets
-  - Appeals, transcripts, and moderation workflow
-  - [Read More →](./docs/Indev.md)
-
 - 👥 **LFP / LFT System**
   - Submit requests for **Looking For Players (LFP)** or **Looking For Team (LFT)**
   - Staff review system with approvals/declines
   - Automatic posting to public channels
   - User controls: create, list, cancel, resend
-  - [Read More →](./docs/docs/Lfp-Lft%20System.md)
+  - [Read More →](./GitAssets/docs/Lfp-Lft%20System.md)
+
+- 🎫 **Ticket System**
+  - Create, close, reopen, and manage support tickets
+  - Appeals, transcripts, and moderation workflow
+  - [Read More →](./GitAssets/Indev.md)
 
 - 🛡 **Moderation Tools**
   - Staff-only review handling
   - Role-based permissions
   - Action logging system
-  - [Read More →](./docs/Indev.md)
+  - [Read More →](./GitAssets/Indev.md)
 
 - 📜 **Logger**
   - Logs channel, message, member, and role events
   - Detailed audit trail
-  - [Read More →](./docs/Indev.md)
+  - [Read More →](./GitAssets/Indev.md)
 
 - ⚙️ **Configurable Structure**
   - Organized handlers for commands, events, and components
   - Easy-to-manage config files
-  - [Read More →](./docs/Indev.md)
+  - [Read More →](./GitAssets/Indev.md)
 
 > [!TIP]
 > Each system has its own dedicated `.md` file inside `/docs`. Start there if you’re exploring a specific feature.
@@ -64,16 +64,16 @@ src/
 ├── Structure/ # Core bot structure (Clients, Configs, Functions, Handlers, Schemas)
 ```
 > [!NOTE]
-> Full explanation of folders: [Read More →](./docs/Indev.md)
+> Full explanation of folders: [Read More →](./GitAssets/Indev.md)
 
 ---
 
 ## 🚀 Getting Started <a name="getting-started"></a>
 
 ### Prerequisites <a name="prerequisites"></a>
-- A Discord Bot - [Tutorial](./docs/docs/Discord-bot-creation.md)
+- A Discord Bot - [Tutorial](./GitAssets/docs/Discord-bot-creation.md)
 - Installation of Bun - [Tutorial](https://bun.com/docs/installation)
-- MongoDB Database - [Tutorial](./docs/Indev.md)
+- MongoDB Database - [Tutorial](./GitAssets/docs/MongoDB.md)
 - Git - [Tutorial](https://github.com/git-guides/install-git)
 
 > [!CAUTION]
@@ -147,13 +147,13 @@ bun .
 ---
 
 ## 📑 Documentation <a name="documentation"></a>
-- [Ticket System](./docs/Indev.md)
-- [Lfp/Lft System](./docs/Lfp-Lft%20System.md)
-- [Moderation](./docs/Indev.md)
-- [Logger](./docs/Indev.md)
-- [Structure](./docs/Indev.md)
-- [Handler](./docs/Indev.md)
-- [Config](./docs/Indev.md)
+- [Ticket System](./GitAssets/Indev.md)
+- [Lfp/Lft System](./GitAssets/Lfp-Lft%20System.md)
+- [Moderation](./GitAssets/Indev.md)
+- [Logger](./GitAssets/Indev.md)
+- [Structure](./GitAssets/Indev.md)
+- [Handler](./GitAssets/Indev.md)
+- [Config](./GitAssets/Indev.md)
 
 ---
 

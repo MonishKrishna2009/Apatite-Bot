@@ -11,7 +11,7 @@ const config = require("../../Structure/Configs/config.js");
 class TickTransButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-transcript-button",
+            id: "ticket-transcript",
             type: "BUTTON"
         });
     }

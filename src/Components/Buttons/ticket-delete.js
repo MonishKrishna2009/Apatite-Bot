@@ -10,7 +10,7 @@ const html = require('discord-html-transcripts')
 class TickDelButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-delete-button",
+            id: "ticket-delete",
             type: "BUTTON"
         });
     }
@@ -63,22 +63,22 @@ class TickDelButton extends Component {
     const confirmRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
-                .setCustomId("ticket-delete-confirm")
+                .setCustomId("delete-confirm-ticket")
                 .setEmoji("✔️")
                 .setLabel("Yes")
                 .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
-                .setCustomId("ticket-delete-cancel")
+                .setCustomId("delete-cancel-ticket")
                 .setEmoji("❌")
                 .setLabel("No")
                 .setStyle(ButtonStyle.Secondary)
         );
 
     await interaction.reply({ embeds: [confirmEmbed], components: [confirmRow], flags: MessageFlags.Ephemeral });
-    const filter = i => i.customId === "ticket-delete-confirm" || i.customId === "ticket-delete-cancel";
+    const filter = i => i.customId === "delete-confirm-ticket" || i.customId === "delete-cancel-ticket";
     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 });
     collector.on('collect', async i => {
-        if (i.customId === "ticket-delete-confirm") {
+        if (i.customId === "delete-confirm-ticket") {
             const deletingEmbed = new EmbedBuilder()
                 .setColor(Colors.Red)
                 .setDescription("Deleting ticket... Please wait.")

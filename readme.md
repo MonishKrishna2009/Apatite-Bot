@@ -1,7 +1,9 @@
 # Apatite Bot
+⚡ The all-in-one open-source Discord bot for esports, tournaments, and community management.
 
 > [!IMPORTANT]
 > This project is work-in-progress. Features may change frequently until v1.0 is released.
+> Here is the [development roadmap](./GitAssets/docs/Development-roadmap.md) for this project!
 
 A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.org) and MongoDB, designed for **ticketing, player/team matchmaking (LFP/LFT)**, and advanced moderation tools.
 

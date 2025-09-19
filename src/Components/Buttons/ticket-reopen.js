@@ -9,7 +9,7 @@ const config = require("../../Structure/Configs/config.js");
 class TickReopenButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-reopen-button",
+            id: "ticket-reopen",
             type: "BUTTON"
         });
     }
@@ -37,12 +37,12 @@ class TickReopenButton extends Component {
         const confirmRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId("ticket-reopen-confirm")
+                    .setCustomId("reopen-confirm-ticket")
                     .setEmoji("✔️")
                     .setLabel("Yes")
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
-                    .setCustomId("ticket-reopen-cancel")
+                    .setCustomId("reopen-cancel-ticket")
                     .setEmoji("❌")
                     .setLabel("No")
                     .setStyle(ButtonStyle.Secondary)
@@ -52,7 +52,7 @@ class TickReopenButton extends Component {
         const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30_000});
 
         collector.on("collect", async i => {
-            if (i.customId === "ticket-reopen-confirm") {
+            if (i.customId === "reopen-confirm-ticket") {
                 // Logic to reopen the ticket
                 dataTicket.isClose = false;
                 await dataTicket.save();
@@ -81,7 +81,7 @@ class TickReopenButton extends Component {
                 // disable the reopen button
                 const updatedRow = ActionRowBuilder.from(interaction.message.components[0]);
                 updatedRow.components.forEach(c => {
-                    if (c.data.custom_id === "ticket-reopen-button") {
+                    if (c.data.custom_id === "ticket-reopen") {
                         c.setDisabled(true);
                     }
                 });
@@ -105,7 +105,7 @@ class TickReopenButton extends Component {
 
                     await logChannel.send({ embeds: [logEmbed] });
                 }
-            } else if (i.customId === "ticket-reopen-cancel") {
+            } else if (i.customId === "reopen-cancel-ticket") {
                 const cancelEmbed = new EmbedBuilder()
                     .setColor("Red")
                     .setDescription(`**❌ Ticket reopening has been cancelled.**`)

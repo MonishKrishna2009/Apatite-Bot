@@ -9,7 +9,7 @@ const config = require("../../Structure/Configs/config.js");
 class CloseTicketButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-close-button",
+            id: "ticket-close",
             type: "BUTTON"
         });
     }
@@ -48,21 +48,21 @@ class CloseTicketButton extends Component {
         const confirmRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId("ticket-close-confirm")
+                    .setCustomId("close-confirm-ticket")
                     .setEmoji("✔️")
                     .setLabel("Yes")
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
-                    .setCustomId("ticket-close-cancel")
+                    .setCustomId("close-cancel-ticket")
                     .setEmoji("❌")
                     .setLabel("No")
                     .setStyle(ButtonStyle.Secondary)
             );
         await interaction.reply({ embeds: [confirmEmbed], components: [confirmRow], flags: MessageFlags.Ephemeral });
-        const filter = i => i.customId === "ticket-close-confirm" || i.customId === "ticket-close-cancel";
+        const filter = i => i.customId === "close-confirm-ticket" || i.customId === "close-cancel-ticket";
         const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 });
         collector.on('collect', async i => {
-            if (i.customId === "ticket-close-confirm") {
+            if (i.customId === "close-confirm-ticket") {
                 // Update ticket status to closed
                 dataTicket.isClose = true;
                 await dataTicket.save();
@@ -82,7 +82,7 @@ class CloseTicketButton extends Component {
                 const reopenButton = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder()
-                            .setCustomId("ticket-reopen-button")
+                            .setCustomId("ticket-reopen")
                             .setEmoji("🔄")
                             .setLabel("Reopen Ticket")
                             .setStyle(ButtonStyle.Primary)

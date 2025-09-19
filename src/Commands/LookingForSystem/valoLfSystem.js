@@ -30,7 +30,7 @@ class LFSys extends Command {
 
         if (sub === "players") {
             const modal = new ModalBuilder()
-                .setCustomId("valolfpModal")
+                .setCustomId("valo-lf-p")
                 .setTitle("Looking For Players");
 
             modal.addComponents(
@@ -56,7 +56,7 @@ class LFSys extends Command {
 
         if (sub === "team") {
             const modal = new ModalBuilder()
-                .setCustomId("valolftModal")
+                .setCustomId("valo-lf-t")
                 .setTitle("Looking For Team");
 
             modal.addComponents(

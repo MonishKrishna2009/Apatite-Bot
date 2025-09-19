@@ -13,26 +13,37 @@ class ModalCreate extends Event {
   async execute(interaction) {
     const { client } = this;
     if (!interaction.isModalSubmit()) return;
-    const modal = client.modals.get(interaction.customId);
+
+    let modal = client.modals.get(interaction.customId);
+
+    // 🔎 If no exact match, try regex match
+    if (!modal) {
+      modal = [...client.modals.values()].find((m) => {
+        if (m.id instanceof RegExp) return m.id.test(interaction.customId);
+        return false;
+      });
+    }
+
     if (!modal) return;
 
     try {
       await modal.execute(interaction, client);
     } catch (error) {
       logger.error(error);
-      if (interaction.replied) {
+      if (interaction.replied || interaction.deferred) {
         await interaction.editReply({
-          content: "Catch an error while running this command.",
+          content: "⚠️ An error occurred while processing this modal.",
           flags: MessageFlags.Ephemeral,
         });
       } else {
         await interaction.reply({
-          content: "Catch an error while running this command.",
+          content: "⚠️ An error occurred while processing this modal.",
           flags: MessageFlags.Ephemeral,
         });
       }
     }
   }
+
 }
 
 module.exports = ModalCreate;

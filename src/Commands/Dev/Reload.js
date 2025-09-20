@@ -84,10 +84,10 @@ class Reload extends Command {
         } catch (error) {
           logger.error(error);
         }
+        break;
       default:
         break;
-    }
-  }
+    }  }
 }
 
 module.exports = Reload;

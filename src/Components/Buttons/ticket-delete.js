@@ -10,7 +10,7 @@ const html = require('discord-html-transcripts')
 class TickDelButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-delete",
+            id: "ticket-delete-button",
             type: "BUTTON"
         });
     }
@@ -30,28 +30,16 @@ class TickDelButton extends Component {
         }
 
         const supportRole = config.ticketSupportRoleId;
-        if (!member.roles.cache.has(supportRole)) {
+        if (!member.roles.cache.has(supportRole) && !member.permissions.has("Administrator")) {
             const noPermsEmbed = new EmbedBuilder()
                 .setColor(Colors.Red)
                 .setDescription("You do not have permission to use this button.")
-                .setFooter({ text: "You need the support role to use this button.", iconURL: guild.iconURL() })
+                .setFooter({ text: "You need the support role or Administrator permission to use this button.", iconURL: guild.iconURL() })
                 .setTimestamp();
             return interaction.reply({
                 embeds: [noPermsEmbed],
                 flags: MessageFlags.Ephemeral
             });
-        } else {
-            if (!member.permissions.has("Administrator")) {
-                const noPermsEmbed = new EmbedBuilder()
-                    .setColor(Colors.Red)
-                    .setDescription("You do not have permission to use this button.")
-                    .setFooter({ text: "You need the support role to use this button.", iconURL: guild.iconURL() })
-                    .setTimestamp();
-                return interaction.reply({
-                    embeds: [noPermsEmbed],
-                    flags: MessageFlags.Ephemeral
-                });
-            }
         }
 
         const confirmEmbed = new EmbedBuilder()
@@ -116,9 +104,8 @@ class TickDelButton extends Component {
                     "**Ticket Deleted**",
                     `>>> **Channel**: ${channel.name} (\`${channel.id}\`)\n` +
                     `**Deleted By**: ${user.tag} (\`${user.id}\`)\n` +
-                    `**Owner**: <@${dataTicket.userId}> (\`${dataTicket.userId}\`)\n` +
-                    `**Reason**: Ticket deleted via button`
-                );
+                    `**Owner**: <@${dataTicket[0]?.userId || 'Unknown'}> (\`${dataTicket[0]?.userId || 'Unknown'}\`)\n` +
+                    `**Reason**: Ticket deleted via button`                );
 
                 logEmbed.setFooter({
                     text: `Ticket System • ${new Date().toLocaleTimeString()}`,
@@ -129,9 +116,7 @@ class TickDelButton extends Component {
             }
 
             await channel.delete();
-            await ticketSchema.deleteOne();
-
-        } else {
+            await ticketSchema.deleteOne({ guildId: guild.id, channelId: channel.id });        } else {
             const cancelEmbed = new EmbedBuilder()
                 .setColor(Colors.Green)
                 .setDescription("Ticket deletion has been cancelled.")

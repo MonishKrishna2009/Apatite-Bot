@@ -9,7 +9,7 @@ const config = require("../../Structure/Configs/config.js");
 class TickReopenButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-reopen",
+            id: "ticket-reopen-button",
             type: "BUTTON"
         });
     }
@@ -81,7 +81,7 @@ class TickReopenButton extends Component {
                 // disable the reopen button
                 const updatedRow = ActionRowBuilder.from(interaction.message.components[0]);
                 updatedRow.components.forEach(c => {
-                    if (c.data.custom_id === "ticket-reopen") {
+                    if (c.data.custom_id === "ticket-reopen-button") {
                         c.setDisabled(true);
                     }
                 });

@@ -5,6 +5,10 @@ const logger = new Logger();
 const config = require("../Configs/config");
 
 async function ClientErrorHandler(client) {
+  if (!config.logWebhook || config.logWebhook.length === 0) {
+    logger.warn("No log webhook configured for ClientErrorHandler");
+    return;
+  }
   const webhook = new WebhookClient({
     url: config.logWebhook,
   });
@@ -16,8 +20,11 @@ async function ClientErrorHandler(client) {
       }).slice(0, 1990)}\`\`\``,
     });
   });
-}
-async function ErrorHandler() {
+}async function ErrorHandler() {
+  if (!config.logWebhook || config.logWebhook.length === 0) {
+    logger.warn("No log webhook configured for ErrorHandler");
+    return;
+  }
   const webhook = new WebhookClient({
     url: config.logWebhook,
   });
@@ -97,5 +104,4 @@ async function ErrorHandler() {
     });
   });
 }
-
 module.exports = { ErrorHandler, ClientErrorHandler };

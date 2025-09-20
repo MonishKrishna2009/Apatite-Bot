@@ -9,7 +9,7 @@ const config = require("../../Structure/Configs/config.js");
 class CloseTicketButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-close",
+            id: "ticket-close-button",
             type: "BUTTON"
         });
     }
@@ -82,7 +82,7 @@ class CloseTicketButton extends Component {
                 const reopenButton = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder()
-                            .setCustomId("ticket-reopen")
+                            .setCustomId("ticket-reopen-button")
                             .setEmoji("🔄")
                             .setLabel("Reopen Ticket")
                             .setStyle(ButtonStyle.Primary)

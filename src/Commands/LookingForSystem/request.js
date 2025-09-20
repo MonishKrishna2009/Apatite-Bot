@@ -9,6 +9,9 @@ const {
   MessageFlags,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } = require("discord.js");
 
 const config = require("../../Structure/Configs/config");
@@ -17,6 +20,8 @@ const { Logger } = require("../../Structure/Functions/index");
 const logger = new Logger();
 
 const { renderRequestEmbed } = require("../../Structure/Functions/renderRequestEmbed");
+
+const mongoose = require("mongoose");
 
 class RequestsCommand extends Command {
   constructor(client) {
@@ -68,6 +73,23 @@ class RequestsCommand extends Command {
 
   async execute(interaction, client) {
     const sub = interaction.options.getSubcommand();
+
+    const id = interaction.options.getString("request_id");
+    // ✅ Validate ID before DB call
+    if (sub !== "list") {
+      if (!mongoose.isValidObjectId(id)) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle("❌ Invalid Request ID")
+              .setDescription(`That doesn\'t look like a valid request ID. Please use an ID from \`/requests list\`.`)
+              .setColor(Colors.Red),
+          ],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+
 
     try {
       // -------------------- "LIST" --------------------

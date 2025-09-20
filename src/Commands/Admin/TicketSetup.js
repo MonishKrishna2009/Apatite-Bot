@@ -60,8 +60,8 @@ class Ticket extends Command {
           { name: "<:RedDot:1404776517136814110> Claim Prize", value: "Use this button if you have won a prize and need to claim it." },
           { name: "<:RedDot:1404776517136814110> Production Inquiry", value: "Use this button for any production-related questions or requests." },
           { name: "<:RedDot:1404776517136814110> General Inquiry", value: "Use this button for any general questions or concerns." },
-          { name: "<:RedDot:1404776517136814110> Appeal", value: "Use this button if you wish to appeal a decision made by the team." },)
-        .setFooter({ text: "Apatite Ticket System", iconURL: client.user.displayAvatarURL() })
+          { name: "<:RedDot:1404776517136814110> Appeal", value: "Use this button if you wish to appeal a decision made by the team." }
+        )        .setFooter({ text: "Apatite Ticket System", iconURL: client.user.displayAvatarURL() })
     
     const ticketChannel = config.ticketDashChannelId;
     const img = new AttachmentBuilder("https://cdn.discordapp.com/attachments/1350827709571534871/1406943660440027216/APATIE_DISCORD_INFO.png?ex=68a44de4&is=68a2fc64&hm=a1bd9cfb5f609e72514d67d4a82c883bcc0b4c80149b6da7aac2e956b5e1849e&");

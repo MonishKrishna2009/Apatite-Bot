@@ -65,9 +65,9 @@ class TicketButton extends Component {
 
         // Reusable action buttons
         const rowConfig = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId("ticket-close").setEmoji("🔒").setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId("ticket-delete").setEmoji("🗑").setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId("ticket-transcript").setEmoji("📝").setStyle(ButtonStyle.Primary)
+            new ButtonBuilder().setCustomId("ticket-close-button").setEmoji("🔒").setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId("ticket-delete-button").setEmoji("🗑").setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId("ticket-transcript-button").setEmoji("📝").setStyle(ButtonStyle.Primary)
         );
 
         // Create ticket channel

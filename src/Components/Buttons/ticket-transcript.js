@@ -11,7 +11,7 @@ const config = require("../../Structure/Configs/config.js");
 class TickTransButton extends Component {
     constructor(client) {
         super(client, {
-            id: "ticket-transcript",
+            id: "ticket-transcript-button",
             type: "BUTTON"
         });
     }
@@ -32,28 +32,17 @@ class TickTransButton extends Component {
         
         const supportRole = config.ticketSupportRoleId;
 
-        if (!interaction.member.roles.cache.has(supportRole)) {
+        // Combined permission check: block if member lacks both supportRole and Administrator
+        if (!interaction.member.roles.cache.has(supportRole) && !interaction.member.permissions.has("Administrator")) {
             const noPermsEmbed = new EmbedBuilder()
                 .setColor(Colors.Red)
                 .setDescription("You do not have permission to use this button.")
-                .setFooter({ text: "You need the support role to use this button." })
+                .setFooter({ text: "You need the support role or Administrator permission to use this button." })
                 .setTimestamp();
             return interaction.reply({
                 embeds: [noPermsEmbed],
                 flags: MessageFlags.Ephemeral
             });
-        }else {
-            if (!member.permissions.has("Administrator")) {
-                const noPermsEmbed = new EmbedBuilder()
-                    .setColor(Colors.Red)
-                    .setDescription("You do not have permission to use this button.")
-                    .setFooter({ text: "You need the support role to use this button." })
-                    .setTimestamp();
-                return interaction.reply({
-                    embeds: [noPermsEmbed],
-                    flags: MessageFlags.Ephemeral
-                });
-            }
         }
 
         const embed = new EmbedBuilder()

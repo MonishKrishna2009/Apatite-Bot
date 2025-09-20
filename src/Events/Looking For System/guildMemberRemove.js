@@ -4,6 +4,7 @@ const { Events } = require("discord.js");
 const logger = new Logger();
 
 const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft.js");
+const config = require("../../Structure/Configs/config.js")
 
 class LFUpdate extends Event {
     constructor(client) {

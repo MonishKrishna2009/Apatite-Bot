@@ -29,9 +29,30 @@ module.exports = {
 
     //LFP LFT Configurations
     lfpLftSystem: true,
+    
+    // Game-specific channels
+    gameChannels: {
+        valorant: {
+            reviewChannelId: process.env.VALO_LF_REVIEW_CHANNEL_ID,
+            publicChannelId: process.env.VALO_LFP_LFT_CHANNEL_ID,
+        },
+        cs2: {
+            reviewChannelId: process.env.CS2_LF_REVIEW_CHANNEL_ID,
+            publicChannelId: process.env.CS2_LFP_LFT_CHANNEL_ID,
+        },
+        lol: {
+            reviewChannelId: process.env.LOL_LF_REVIEW_CHANNEL_ID,
+            publicChannelId: process.env.LOL_LFP_LFT_CHANNEL_ID,
+        }
+    },
+    
+    // Legacy channels (for backward compatibility)
     valoReviewChannelId: process.env.VALO_LF_REVIEW_CHANNEL_ID,
     valolfpLftChannelId: process.env.VALO_LFP_LFT_CHANNEL_ID,
+    
+    // LF System settings
     lfplftModroleId: process.env.LF_MOD_ROLE_ID,
+    lfActionLogChannelId: process.env.LF_ACTION_LOG_CHANNEL_ID,
     MaxActiveRequest: 5,
     RequestExpiryDays: 7,
     RequestArchiveDays: 30,

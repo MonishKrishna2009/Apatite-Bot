@@ -4,6 +4,7 @@ const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
 
 class LFReviewHandler extends Component {
     constructor(client) {
@@ -33,6 +34,9 @@ class LFReviewHandler extends Component {
         req.reviewedBy = interaction.user.id;
         await req.save();
 
+        // Get game-specific channels
+        const channels = getGameChannels(config, req.game);
+
         // Update review embed
         const oldEmbed = interaction.message.embeds[0];
         const newEmbed = EmbedBuilder.from(oldEmbed)
@@ -49,9 +53,17 @@ class LFReviewHandler extends Component {
                 .setTitle(action === "approve" ? "✅ Request Approved" : "❌ Request Declined")
                 .setColor(action === "approve" ? Colors.Green : Colors.Red)
                 .setDescription(
-                    action === "approve"
-                        ? `Your ${req.type} request has been approved and will be posted in <#${config.valolfpLftChannelId}>.`
-                        : `Your ${req.type} request has been declined by the staff.`
+                    `>>> **Game:** ${req.game}\n` +
+                    `**Type:** ${req.type}\n` +
+                    `**Request ID:** \`${req._id}\`\n` +
+                    `**Reviewed by:** ${interaction.user.tag}\n\n` +
+                    (action === "approve"
+                        ? `**Status:** ✅ Approved\n` +
+                          `**Action:** Your request has been approved and posted in <#${channels.publicChannelId}>\n` +
+                          `**Next Steps:** Other players can now contact you directly!`
+                        : `**Status:** ❌ Declined\n` +
+                          `**Action:** Your request has been declined by the staff team\n` +
+                          `**Next Steps:** You can create a new request or contact staff for more information`)
                 )
                 .setFooter({ text: `Request ID: ${req._id}` })
                 .setTimestamp();
@@ -64,7 +76,7 @@ class LFReviewHandler extends Component {
         if (action === "approve") {
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setLabel(req.type === "LFP" ? "DM Contract" : "DM Player")
+                    .setLabel(req.type === "LFP" ? "DM Team" : "DM Player")
                     .setStyle("Link")
                     .setURL(`https://discord.com/users/${req.userId}`)
             );
@@ -73,7 +85,7 @@ class LFReviewHandler extends Component {
                 .setTitle(req.type === "LFP" ? "📢 Looking For Players" : "📢 Looking For Team")
                 .setColor(req.type === "LFP" ? Colors.Blue : Colors.Purple);
 
-            const publicChannel = interaction.guild.channels.cache.get(config.valolfpLftChannelId);
+            const publicChannel = interaction.guild.channels.cache.get(channels.publicChannelId);
 
             // send and capture message
             const publicMessage = await publicChannel.send({ embeds: [publicEmbed], components: [row] });
@@ -81,6 +93,15 @@ class LFReviewHandler extends Component {
             // save messageId for future edits/deletes
             req.publicMessageId = publicMessage.id;
             await req.save();
+        }
+
+        // Log the action
+        try {
+            const targetUser = await interaction.client.users.fetch(req.userId);
+            await logLFAction(interaction.client, config, action, req, targetUser, interaction.user);
+        } catch (error) {
+            logger.warn(`Failed to fetch user ${req.userId} for logging: ${error.message}`);
+            await logLFAction(interaction.client, config, action, req, { id: req.userId, tag: "Unknown" }, interaction.user);
         }
     }
 }

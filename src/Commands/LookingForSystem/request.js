@@ -20,8 +20,17 @@ const { Logger } = require("../../Structure/Functions/index");
 const logger = new Logger();
 
 const { renderRequestEmbed } = require("../../Structure/Functions/renderRequestEmbed");
-
-const mongoose = require("mongoose");
+const { 
+  STATUS, 
+  isValidRequestId, 
+  canUserPerformAction, 
+  createErrorEmbed, 
+  createSuccessEmbed,
+  createWarningEmbed,
+  getRequestPreview,
+  softDeleteRequest
+} = require("../../Structure/Functions/lfHelpers");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
 
 class RequestsCommand extends Command {
   constructor(client) {
@@ -54,22 +63,22 @@ class RequestsCommand extends Command {
                 .setRequired(true)
             )
         )
+        .addSubcommand((sub) =>
+          sub
+            .setName("delete")
+            .setDescription("Delete a request (soft delete)")
+            .addStringOption((opt) =>
+              opt
+                .setName("request_id")
+                .setDescription("ID of the request to delete")
+                .setRequired(true)
+            )
+        )
         .setDMPermission(false),
       options: { devOnly: false },
     });
   }
 
-  makeRequestPreview(req) {
-    const createdAt = Math.floor(new Date(req.createdAt).getTime() / 1000);
-    const primary =
-      req.content?.teamName ||
-      req.content?.riotID ||
-      req.content?.lookingFor ||
-      Object.values(req.content || {})[0] ||
-      "No preview";
-
-    return `• **${req.type}** | ${req.game} | ${req.status.toUpperCase()} | <t:${createdAt}:R>\n  ↳ ${primary}\n  ID: \`${req._id}\``;
-  }
 
   async execute(interaction, client) {
     const sub = interaction.options.getSubcommand();
@@ -77,14 +86,9 @@ class RequestsCommand extends Command {
     const id = interaction.options.getString("request_id");
     // ✅ Validate ID before DB call
     if (sub !== "list") {
-      if (!mongoose.isValidObjectId(id)) {
+      if (!isValidRequestId(id)) {
         return interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("❌ Invalid Request ID")
-              .setDescription(`That doesn\'t look like a valid request ID. Please use an ID from \`/requests list\`.`)
-              .setColor(Colors.Red),
-          ],
+          embeds: [createErrorEmbed("Invalid Request ID", "That doesn't look like a valid request ID. Please use an ID from `/requests list`.")],
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -100,14 +104,8 @@ class RequestsCommand extends Command {
         }).sort({ createdAt: -1 });
 
         if (!reqs.length) {
-          const noReq = new EmbedBuilder()
-            .setTitle("📭 No Requests Found")
-            .setDescription("You don't have any requests in this server.")
-            .setColor(Colors.Yellow)
-            .setTimestamp();
-
           return interaction.reply({
-            embeds: [noReq],
+            embeds: [createWarningEmbed("No Requests Found", "You don't have any requests in this server.")],
             flags: MessageFlags.Ephemeral,
           });
         }
@@ -125,9 +123,9 @@ class RequestsCommand extends Command {
 
           return new EmbedBuilder()
             .setTitle("📋 Your Requests")
-            .setDescription(slice.map(r => this.makeRequestPreview(r)).join("\n\n"))
+            .setDescription(slice.map(r => getRequestPreview(r)).join("\n\n"))
             .setFooter({
-              text: `Page ${page + 1} of ${totalPages} | Total: ${reqs.length} | Pending: ${counts.pending || 0} • Approved: ${counts.approved || 0} • Declined: ${counts.declined || 0} • Archived: ${counts.archived || 0} • Expired: ${counts.expired || 0}`,
+              text: `Page ${page + 1} of ${totalPages} | Total: ${reqs.length} | Pending: ${counts.pending || 0} • Approved: ${counts.approved || 0} • Declined: ${counts.declined || 0} • Archived: ${counts.archived || 0} • Expired: ${counts.expired || 0} • Cancelled: ${counts.cancelled || 0} • Deleted: ${counts.deleted || 0}`,
             })
             .setColor(Colors.Blue)
             .setTimestamp();
@@ -189,46 +187,29 @@ class RequestsCommand extends Command {
 
         if (!req || req.guildId !== interaction.guild.id) {
           return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("❌ Request Not Found")
-                .setDescription("No request found with that ID in this server.")
-                .setColor(Colors.Red),
-            ],
+            embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
             flags: MessageFlags.Ephemeral,
           });
         }
 
-        if (req.userId !== interaction.user.id) {
+        // Check permissions
+        const permissionCheck = canUserPerformAction(req, interaction.user.id, "cancel");
+        if (!permissionCheck.allowed) {
           return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("❌ Not Allowed")
-                .setDescription("You can only cancel your own requests.")
-                .setColor(Colors.Red),
-            ],
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        if (!["pending", "approved"].includes(req.status)) {
-          return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("⚠️ Cannot Cancel")
-                .setDescription("Only requests with status `pending` or `approved` can be cancelled.")
-                .setColor(Colors.Yellow),
-            ],
+            embeds: [createErrorEmbed("Cannot Cancel", permissionCheck.reason, req.status)],
             flags: MessageFlags.Ephemeral,
           });
         }
 
         const triedDeletes = [];
 
+        // Get game-specific channels
+        const channels = getGameChannels(config, req.game);
+
         // Try deleting review message
         if (req.messageId) {
           try {
-            const ch = await client.channels.fetch(config.valoReviewChannelId);
+            const ch = await client.channels.fetch(channels.reviewChannelId);
             const m = await ch.messages.fetch(req.messageId).catch(() => null);
             if (m) await m.delete();
             triedDeletes.push("review message");
@@ -238,29 +219,49 @@ class RequestsCommand extends Command {
         // Try deleting public message
         if (req.publicMessageId) {
           try {
-            const ch = await client.channels.fetch(config.valolfpLftChannelId);
+            const ch = await client.channels.fetch(channels.publicChannelId);
             const m = await ch.messages.fetch(req.publicMessageId).catch(() => null);
             if (m) await m.delete();
             triedDeletes.push("public message");
           } catch { }
         }
 
-        // 🚨 Delete from DB instead of archiving
-        await LFRequest.deleteOne({ _id: req._id });
+        // Mark as cancelled
+        req.status = STATUS.CANCELLED;
+        req.messageId = null;
+        req.publicMessageId = null;
+        await req.save();
+
+        // Log the action
+        await logLFAction(client, config, 'cancel', req, interaction.user);
+
+        // 📩 DM Notification
+        try {
+          const cancelDmEmbed = new EmbedBuilder()
+            .setTitle("🚫 Request Cancelled")
+            .setColor(Colors.Orange)
+            .setDescription(
+              `>>> **Game:** ${req.game}\n` +
+              `**Type:** ${req.type}\n` +
+              `**Request ID:** \`${req._id}\`\n` +
+              `**Status:** Cancelled\n` +
+              `**Action:** Your request has been cancelled\n` +
+              `**Messages Deleted:** ${triedDeletes.length ? triedDeletes.join(", ") : "None"}`
+            )
+            .setFooter({ text: `Request ID: ${req._id}` })
+            .setTimestamp();
+          
+          await interaction.user.send({ embeds: [cancelDmEmbed] });
+        } catch (error) {
+          logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request cancellation.`);
+        }
 
         return interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("✅ Request Cancelled & Removed")
-              .setDescription(
-                `Your request \`${req._id}\` has been cancelled and removed from the system.${triedDeletes.length ? ` Deleted: ${triedDeletes.join(", ")}` : ""
-                }`
-              )
-              .setColor(Colors.Green),
-          ],
+          embeds: [createSuccessEmbed("Request Cancelled", `Your request \`${req._id}\` has been cancelled.${triedDeletes.length ? ` Deleted: ${triedDeletes.join(", ")}` : ""}`, STATUS.CANCELLED)],
           flags: MessageFlags.Ephemeral,
         });
       }
+
 
 
       // -------------------- "RESEND" --------------------
@@ -270,54 +271,35 @@ class RequestsCommand extends Command {
 
         if (!req || req.guildId !== interaction.guild.id) {
           return interaction.reply({
-            embeds: [new EmbedBuilder().setTitle("❌ Request Not Found").setColor(Colors.Red)],
+            embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
             flags: MessageFlags.Ephemeral,
           });
         }
 
-        if (req.userId !== interaction.user.id) {
+        // Check permissions
+        const permissionCheck = canUserPerformAction(req, interaction.user.id, "resend");
+        if (!permissionCheck.allowed) {
           return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("❌ Not Allowed")
-                .setColor(Colors.Red)
-                .setDescription("You can only resend your own requests."),
-            ],
+            embeds: [createErrorEmbed("Cannot Resend", permissionCheck.reason, req.status)],
             flags: MessageFlags.Ephemeral,
           });
         }
 
-        if (!["archived", "expired"].includes(req.status)) {
-          return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("⚠️ Cannot Resend")
-                .setColor(Colors.Yellow)
-                .setDescription("Only archived or expired requests can be resent."),
-            ],
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        req.status = "pending";
+        req.status = STATUS.PENDING;
         req.reviewedBy = null;
         req.messageId = null;
         req.publicMessageId = null;
         await req.save();
 
         await interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("✅ Request Resent")
-              .setDescription(`Your request \`${req._id}\` has been resent for review.`)
-              .setColor(Colors.Green),
-          ],
+          embeds: [createSuccessEmbed("Request Resent", `Your request \`${req._id}\` has been resent for review.`, STATUS.PENDING)],
           flags: MessageFlags.Ephemeral,
         });
 
         try {
           const author = await client.users.fetch(req.userId);
-          const reviewCh = await client.channels.fetch(config.valoReviewChannelId);
+          const channels = getGameChannels(config, req.game);
+          const reviewCh = await client.channels.fetch(channels.reviewChannelId);
           const reviewEmbed = renderRequestEmbed(req, author);
 
           const row = new ActionRowBuilder().addComponents(
@@ -334,16 +316,101 @@ class RequestsCommand extends Command {
           const m = await reviewCh.send({ embeds: [reviewEmbed], components: [row] });
           req.messageId = m.id;
           await req.save();
+
+          // Log the action
+          await logLFAction(client, config, 'resend', req, interaction.user);
+
+          // 📩 DM Notification
+          try {
+            const resendDmEmbed = new EmbedBuilder()
+              .setTitle("🔄 Request Resent")
+              .setColor(Colors.Purple)
+              .setDescription(
+                `>>> **Game:** ${req.game}\n` +
+                `**Type:** ${req.type}\n` +
+                `**Request ID:** \`${req._id}\`\n` +
+                `**Status:** Pending Review\n` +
+                `**Action:** Your request has been resent for review\n` +
+                `**Review Channel:** <#${channels.reviewChannelId}>`
+              )
+              .setFooter({ text: `Request ID: ${req._id}` })
+              .setTimestamp();
+            
+            await interaction.user.send({ embeds: [resendDmEmbed] });
+          } catch (error) {
+            logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request resend.`);
+          }
         } catch (err) {
           logger.warn(`Failed to send resent request ${req._id}: ${err.message}`);
         }
 
         return;
       }
+
+      // -------------------- "DELETE" --------------------
+      if (sub === "delete") {
+        const id = interaction.options.getString("request_id");
+        const req = await LFRequest.findById(id);
+
+        if (!req || req.guildId !== interaction.guild.id) {
+          return interaction.reply({
+            embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Check permissions
+        const permissionCheck = canUserPerformAction(req, interaction.user.id, "delete");
+        if (!permissionCheck.allowed) {
+          return interaction.reply({
+            embeds: [createErrorEmbed("Cannot Delete", permissionCheck.reason, req.status)],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Soft delete the request
+        const result = await softDeleteRequest(id, interaction.guild.id);
+        
+        if (!result.success) {
+          return interaction.reply({
+            embeds: [createErrorEmbed("Delete Failed", result.error)],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Log the action
+        await logLFAction(client, config, 'delete', result.request, interaction.user);
+
+        // 📩 DM Notification
+        try {
+          const deleteDmEmbed = new EmbedBuilder()
+            .setTitle("🗑️ Request Deleted")
+            .setColor(Colors.DarkRed)
+            .setDescription(
+              `>>> **Game:** ${result.request.game}\n` +
+              `**Type:** ${result.request.type}\n` +
+              `**Request ID:** \`${id}\`\n` +
+              `**Status:** Deleted\n` +
+              `**Action:** Your request has been permanently deleted\n` +
+              `**Note:** This action cannot be undone`
+            )
+            .setFooter({ text: `Request ID: ${id}` })
+            .setTimestamp();
+          
+          await interaction.user.send({ embeds: [deleteDmEmbed] });
+        } catch (error) {
+          logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request deletion.`);
+        }
+
+        return interaction.reply({
+          embeds: [createSuccessEmbed("Request Deleted", `Your request \`${id}\` has been deleted.`, STATUS.DELETED)],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
     } catch (err) {
       logger.error(`RequestsCommand error: ${err.stack}`);
       return interaction.reply({
-        content: "An error occurred, please try again later.",
+        embeds: [createErrorEmbed("Error", "An error occurred, please try again later.")],
         flags: MessageFlags.Ephemeral,
       });
     }

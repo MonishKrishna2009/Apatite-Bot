@@ -6,7 +6,8 @@ Other players can then view **approved requests** and directly contact the origi
 
 ## ✨ Features
 
-- **Multi-game Support**: Valorant, Counter-Strike 2, League of Legends (Can add more easily)
+- **Multi-game Support**: Valorant, Counter-Strike 2, League of Legends (Easily extensible via JSON)
+- **JSON Configuration**: Games and fields defined in config files, no code changes needed
 - **Game-Specific Channels**: Separate review and public channels for each game
 - **Request Management**: Create, edit, delete, cancel, and resend requests
 - **Status Tracking**: Pending, approved, declined, archived, expired, cancelled, deleted
@@ -16,6 +17,7 @@ Other players can then view **approved requests** and directly contact the origi
 - **Action Logging**: Complete audit trail with beautiful formatting
 - **Smart Edit Logic**: Editing approved requests resets them for review
 - **Permission System**: Role-based access control and ownership validation
+- **Dynamic Modals**: Modal fields generated automatically from JSON configuration
 
 ---
 
@@ -76,21 +78,188 @@ flowchart TD
     classDef neutral fill:#95A5A6,stroke:#2C3E50,color:#fff;
 ```
 
-## 🎮 Game Support
+---
 
-### Valorant
-- **LFP Fields**: Team Name, Roles Needed, Peak Rank, Current Rank, Additional Info
-- **LFT Fields**: Riot ID, Roles Played, Peak/Current Rank, Recent Teams, Additional Info
+## ⚙️ JSON Configuration System
 
-### Counter-Strike 2
-- **LFP Fields**: Team Name, Roles Needed, Peak Rank, Current Rank, Additional Info
-- **LFT Fields**: Steam ID, Roles Played, Peak/Current Rank, Recent Teams, Additional Info
+The LFP/LFT system uses JSON configuration files to define games and their modal fields. This makes adding new games extremely easy - just edit the JSON files!
 
-### League of Legends
-- **LFP Fields**: Team Name, Roles Needed, Peak Rank, Current Rank, Additional Info
-- **LFT Fields**: Summoner Name, Roles Played, Peak/Current Rank, Recent Teams, Additional Info
+### Configuration Files
+
+#### `src/Structure/Configs/LFConfig/lfp.json`
+Defines LFP (Looking For Players) games and their fields.
+
+#### `src/Structure/Configs/LFConfig/lft.json`
+Defines LFT (Looking For Team) games and their fields.
+
+### JSON Structure
+
+```json
+{
+  "gameKey": {
+    "reviewChannel": "ENV_VAR_NAME",
+    "publicChannel": "ENV_VAR_NAME", 
+    "displayName": "Game Display Name",
+    "fields": [
+      {
+        "id": "fieldId",
+        "label": "Field Label",
+        "style": "SHORT|PARAGRAPH",
+        "required": true|false,
+        "placeholder": "Placeholder text",
+        "maxLength": 100
+      }
+    ]
+  }
+}
+```
+
+### Field Properties
+
+- **`id`**: Unique identifier for the field (used in database)
+- **`label`**: Display name shown to users
+- **`style`**: `SHORT` for single line, `PARAGRAPH` for multi-line
+- **`required`**: Whether the field is mandatory
+- **`placeholder`**: Hint text shown in the input field
+- **`maxLength`**: Maximum character limit (optional)
+
+### Adding a New Game
+
+1. **Add to JSON files**: Edit both `lfp.json` and `lft.json`
+2. **Define fields**: Specify the fields specific to that game
+3. **Set channels**: Reference environment variables for channels
+4. **Restart bot**: The changes take effect immediately
+
+### Example: Adding Rocket League
+
+**lfp.json:**
+```json
+{
+  "rocketleague": {
+    "reviewChannel": "RL_LF_REVIEW_CHANNEL_ID",
+    "publicChannel": "RL_LFP_LFT_CHANNEL_ID",
+    "displayName": "Rocket League",
+    "fields": [
+      {
+        "id": "teamName",
+        "label": "Team Name",
+        "style": "SHORT",
+        "required": true,
+        "placeholder": "e.g., Apatite",
+        "maxLength": 100
+      },
+      {
+        "id": "ranksNeeded",
+        "label": "Ranks Needed",
+        "style": "SHORT",
+        "required": true,
+        "placeholder": "e.g., Diamond, Champion",
+        "maxLength": 100
+      },
+      {
+        "id": "playstyle",
+        "label": "Playstyle",
+        "style": "PARAGRAPH",
+        "required": false,
+        "placeholder": "Aggressive, defensive, etc...",
+        "maxLength": 500
+      }
+    ]
+  }
+}
+```
+
+**lft.json:**
+```json
+{
+  "rocketleague": {
+    "reviewChannel": "RL_LF_REVIEW_CHANNEL_ID",
+    "publicChannel": "RL_LFP_LFT_CHANNEL_ID",
+    "displayName": "Rocket League",
+    "fields": [
+      {
+        "id": "epicID",
+        "label": "Epic ID",
+        "style": "SHORT",
+        "required": true,
+        "placeholder": "e.g., Apatite",
+        "maxLength": 100
+      },
+      {
+        "id": "currentRank",
+        "label": "Current Rank",
+        "style": "SHORT",
+        "required": true,
+        "placeholder": "e.g., Diamond 2",
+        "maxLength": 100
+      },
+      {
+        "id": "preferredRole",
+        "label": "Preferred Role",
+        "style": "SHORT",
+        "required": true,
+        "placeholder": "Striker, Midfielder, Defender",
+        "maxLength": 100
+      }
+    ]
+  }
+}
+```
+
+### Configuration Flow
+
+```mermaid
+flowchart TD
+    A[JSON Config Files] --> B[Modal Handler]
+    B --> C[Command Registration]
+    C --> D[Dynamic Game Choices]
+    D --> E[User Selects Game]
+    E --> F[Modal Generated from Config]
+    F --> G[User Fills Fields]
+    G --> H[Content Extracted]
+    H --> I[Request Saved]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style F fill:#e8f5e8
+```
+
+---
+
+
+
+## 📁 Project Structure
+
+The LFP/LFT system is organized into dedicated folders for better maintainability:
+
+### Core Functions (`src/Structure/Functions/LFSystem/`)
+- **`modalHandler.js`** - Centralized modal management and JSON config loader
+- **`lfHelpers.js`** - Common helper functions and utilities
+- **`lfActionLogger.js`** - Action logging and game channel management
+- **`activeRequest.js`** - Active request checking and validation
+- **`requestCleanup.js`** - Automatic cleanup and archiving system
+
+### Configuration (`src/Structure/Configs/LFConfig/`)
+- **`lfp.json`** - LFP game definitions and field configurations
+- **`lft.json`** - LFT game definitions and field configurations
+
+### Commands (`src/Commands/LookingForSystem/`)
+- **`lfp.js`** - Looking For Players command handler
+- **`lft.js`** - Looking For Team command handler
+- **`request.js`** - Request management command handler
+
+### Components (`src/Components/`)
+- **`Modals/`** - Modal components for create/edit operations
+- **`Buttons/`** - Button components for review actions
 
 ## 🔧 Technical Features
+
+### Modal Handler System
+- **Dynamic Generation**: Modals created automatically from JSON configuration
+- **Field Extraction**: Content extracted using field IDs from config
+- **Embed Generation**: Review and DM embeds generated from field definitions
+- **Validation**: Field validation based on JSON requirements
+- **Extensibility**: New games require only JSON changes, no code modifications
 
 ### Game-Specific Channel System
 - **Separate Channels**: Each game has its own review and public channels
@@ -135,17 +304,15 @@ flowchart TD
 
 ### LFP Commands
 - `/lfp create <game>` - Create a new LFP request
-  - **Games**: Valorant, Counter-Strike 2, League of Legends
-  - **Fields**: Team Name, Roles Needed, Peak Rank, Current Rank, Additional Info
+  - **Games**: Valorant, Counter-Strike 2, League of Legends (More games added via json)
+  - **Fields**: Team Name, Roles Needed, Peak Rank, Current Rank, Additional Info (Depending on the json fields)
 - `/lfp edit <request_id>` - Edit an existing LFP request
-- `/lfp delete <request_id>` - Delete an LFP request (soft delete)
 
 ### LFT Commands  
 - `/lft create <game>` - Create a new LFT request
-  - **Games**: Valorant, Counter-Strike 2, League of Legends
-  - **Fields**: Game ID, Roles Played, Peak/Current Rank, Recent Teams, Additional Info
+  - **Games**: Valorant, Counter-Strike 2, League of Legends (Relies on Json data)
+  - **Fields**: Game ID, Roles Played, Peak/Current Rank, Recent Teams, Additional Info (Relies on Json data)
 - `/lft edit <request_id>` - Edit an existing LFT request
-- `/lft delete <request_id>` - Delete an LFT request (soft delete)
 
 ### Request Management Commands
 - `/requests list` - List all your LFP/LFT requests (paginated)

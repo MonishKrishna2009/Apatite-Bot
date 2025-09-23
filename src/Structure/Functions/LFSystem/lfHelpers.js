@@ -1,6 +1,6 @@
 const { EmbedBuilder, Colors, MessageFlags } = require("discord.js");
-const LFRequest = require("../Schemas/LookingFor/lfplft");
-const { Logger } = require("./Logger");
+const LFRequest = require("../../Schemas/LookingFor/lfplft");
+const { Logger } = require("../Logger");
 const logger = new Logger();
 
 /**

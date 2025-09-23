@@ -1,13 +1,7 @@
 const Command = require("../../Structure/Handlers/BaseCommand");
 const { 
     SlashCommandBuilder, 
-    ModalBuilder, 
-    ActionRowBuilder, 
-    TextInputBuilder, 
-    TextInputStyle, 
-    MessageFlags,
-    EmbedBuilder,
-    Colors
+    MessageFlags
 } = require("discord.js");
 const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const { 
@@ -16,12 +10,11 @@ const {
   canUserPerformAction, 
   createErrorEmbed, 
   createSuccessEmbed,
-  createWarningEmbed,
-  getRequestPreview,
   cleanupRequests
-} = require("../../Structure/Functions/lfHelpers");
-const { getGameChannels } = require("../../Structure/Functions/lfActionLogger");
-const { checkActiveRequests } = require("../../Structure/Functions/activeRequest");
+} = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
+const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
+const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 const config = require("../../Structure/Configs/config");
 
 class LFTSys extends Command {
@@ -33,16 +26,20 @@ class LFTSys extends Command {
                 .addSubcommand(sub =>
                     sub.setName("create")
                         .setDescription("Create a new LFT request")
-                        .addStringOption(option =>
-                            option.setName("game")
+                        .addStringOption(option => {
+                            const gameChoices = modalHandler.getGameChoices("lft");
+                            const gameOption = option
+                                .setName("game")
                                 .setDescription("Select the game")
-                                .setRequired(true)
-                                .addChoices(
-                                    { name: "Valorant", value: "valorant" },
-                                    { name: "Counter-Strike 2", value: "cs2" },
-                                    { name: "League of Legends", value: "lol" }
-                                )
-                        )
+                                .setRequired(true);
+                            
+                            // Add choices dynamically from config
+                            gameChoices.forEach(choice => {
+                                gameOption.addChoices(choice);
+                            });
+                            
+                            return gameOption;
+                        })
                 )
                 .addSubcommand(sub =>
                     sub.setName("edit")
@@ -50,15 +47,6 @@ class LFTSys extends Command {
                         .addStringOption(option =>
                             option.setName("request_id")
                                 .setDescription("The ID of the request to edit")
-                                .setRequired(true)
-                        )
-                )
-                .addSubcommand(sub =>
-                    sub.setName("delete")
-                        .setDescription("Delete an LFT request (soft delete)")
-                        .addStringOption(option =>
-                            option.setName("request_id")
-                                .setDescription("The ID of the request to delete")
                                 .setRequired(true)
                         )
                 )
@@ -86,9 +74,6 @@ class LFTSys extends Command {
                 case "edit":
                     await this.handleEdit(interaction);
                     break;
-                case "delete":
-                    await this.handleDelete(interaction);
-                    break;
             }
         } catch (error) {
             console.error(`LFT command error: ${error.stack}`);
@@ -111,8 +96,14 @@ class LFTSys extends Command {
         // Check active request limit
         if (await checkActiveRequests(interaction, "LFT", config)) return;
 
-        // Create modal based on game
-        const modal = this.createGameModal(game);
+        // Create modal based on game using modal handler
+        const modal = modalHandler.createCreateModal("lft", game);
+        if (!modal) {
+            return interaction.reply({
+                embeds: [createErrorEmbed("Configuration Error", `Game configuration not found for ${game}.`)],
+                flags: MessageFlags.Ephemeral
+            });
+        }
         return interaction.showModal(modal);
     }
 
@@ -145,376 +136,18 @@ class LFTSys extends Command {
             });
         }
 
-        // Create edit modal
-        const modal = this.createEditModal(request);
+        // Create edit modal using modal handler
+        const modal = modalHandler.createEditModal("lft", request);
+        if (!modal) {
+            return interaction.reply({
+                embeds: [createErrorEmbed("Configuration Error", `Game configuration not found for ${request.game}.`)],
+                flags: MessageFlags.Ephemeral
+            });
+        }
         return interaction.showModal(modal);
     }
 
-    async handleDelete(interaction) {
-        const requestId = interaction.options.getString("request_id");
-        
-        // Validate request ID
-        if (!isValidRequestId(requestId)) {
-            return interaction.reply({
-                embeds: [createErrorEmbed("Invalid Request ID", "That doesn't look like a valid request ID.")],
-                flags: MessageFlags.Ephemeral
-            });
-        }
 
-        // Find request
-        const request = await LFRequest.findById(requestId);
-        if (!request) {
-            return interaction.reply({
-                embeds: [createErrorEmbed("Request Not Found", "No request found with that ID.")],
-                flags: MessageFlags.Ephemeral
-            });
-        }
-
-        // Check permissions
-        const permissionCheck = canUserPerformAction(request, interaction.user.id, "delete");
-        if (!permissionCheck.allowed) {
-            return interaction.reply({
-                embeds: [createErrorEmbed("Cannot Delete", permissionCheck.reason, request.status)],
-                flags: MessageFlags.Ephemeral
-            });
-        }
-
-        // Soft delete the request
-        const { softDeleteRequest } = require("../../Structure/Functions/lfHelpers");
-        const result = await softDeleteRequest(requestId, interaction.guild.id);
-        
-        if (!result.success) {
-            return interaction.reply({
-                embeds: [createErrorEmbed("Delete Failed", result.error)],
-                flags: MessageFlags.Ephemeral
-            });
-        }
-
-        return interaction.reply({
-            embeds: [createSuccessEmbed("Request Deleted", `Your LFT request \`${requestId}\` has been deleted.`, STATUS.DELETED)],
-            flags: MessageFlags.Ephemeral
-        });
-    }
-
-    createGameModal(game) {
-        const modal = new ModalBuilder()
-            .setCustomId(`lft_create_${game}`)
-            .setTitle(`Looking For Team - ${game.charAt(0).toUpperCase() + game.slice(1)}`);
-
-        switch (game) {
-            case "valorant":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("riotID")
-                            .setLabel("Riot ID")
-                            .setPlaceholder("e.g., Apatite#SA1")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., sentinel, duelist, etc...")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Immortal 3")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, scrim times, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                    )
-                );
-                break;
-            
-            case "cs2":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("steamID")
-                            .setLabel("Steam ID")
-                            .setPlaceholder("e.g., Apatite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., AWPer, IGL, Entry, etc...")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Global Elite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, experience, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                    )
-                );
-                break;
-            
-            case "lol":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("summonerName")
-                            .setLabel("Summoner Name")
-                            .setPlaceholder("e.g., Apatite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., Top, Jungle, Mid, ADC, Support")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Challenger")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, experience, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                    )
-                );
-                break;
-        }
-
-        return modal;
-    }
-
-    createEditModal(request) {
-        const modal = new ModalBuilder()
-            .setCustomId(`lft_edit_${request._id}`)
-            .setTitle(`Edit LFT Request - ${request.game}`);
-
-        // Pre-fill existing values
-        const content = request.content || {};
-        
-        switch (request.game.toLowerCase()) {
-            case "valorant":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("riotID")
-                            .setLabel("Riot ID")
-                            .setPlaceholder("e.g., Apatite#SA1")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.riotID || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., sentinel, duelist, etc...")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.rolesPlayed || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Immortal 3")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.peakRank || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                            .setValue(content.recentTeams || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, scrim times, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                            .setValue(content.additionalInfo || "")
-                    )
-                );
-                break;
-            
-            case "cs2":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("steamID")
-                            .setLabel("Steam ID")
-                            .setPlaceholder("e.g., Apatite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.steamID || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., AWPer, IGL, Entry, etc...")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.rolesPlayed || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Global Elite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.peakRank || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                            .setValue(content.recentTeams || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, experience, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                            .setValue(content.additionalInfo || "")
-                    )
-                );
-                break;
-            
-            case "lol":
-                modal.addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("summonerName")
-                            .setLabel("Summoner Name")
-                            .setPlaceholder("e.g., Apatite")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.summonerName || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("rolesPlayed")
-                            .setLabel("Roles Played")
-                            .setPlaceholder("e.g., Top, Jungle, Mid, ADC, Support")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.rolesPlayed || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("peakRank")
-                            .setLabel("Peak/Current Rank")
-                            .setPlaceholder("e.g., Challenger")
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                            .setValue(content.peakRank || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("recentTeams")
-                            .setLabel("Recent Teams")
-                            .setPlaceholder("e.g., Apatite Weekly scrims (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(300)
-                            .setValue(content.recentTeams || "")
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId("additionalInfo")
-                            .setLabel("Details")
-                            .setPlaceholder("Availability, languages, experience, etc... (optional)")
-                            .setStyle(TextInputStyle.Paragraph)
-                            .setRequired(false)
-                            .setMaxLength(3000)
-                            .setValue(content.additionalInfo || "")
-                    )
-                );
-                break;
-        }
-
-        return modal;
-    }
 }
 
 module.exports = LFTSys;

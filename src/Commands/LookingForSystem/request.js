@@ -29,8 +29,8 @@ const {
   createWarningEmbed,
   getRequestPreview,
   softDeleteRequest
-} = require("../../Structure/Functions/lfHelpers");
-const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
+} = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
 
 class RequestsCommand extends Command {
   constructor(client) {
@@ -201,65 +201,77 @@ class RequestsCommand extends Command {
           });
         }
 
-        const triedDeletes = [];
-
-        // Get game-specific channels
-        const channels = getGameChannels(config, req.game);
-
-        // Try deleting review message
-        if (req.messageId) {
-          try {
-            const ch = await client.channels.fetch(channels.reviewChannelId);
-            const m = await ch.messages.fetch(req.messageId).catch(() => null);
-            if (m) await m.delete();
-            triedDeletes.push("review message");
-          } catch { }
-        }
-
-        // Try deleting public message
-        if (req.publicMessageId) {
-          try {
-            const ch = await client.channels.fetch(channels.publicChannelId);
-            const m = await ch.messages.fetch(req.publicMessageId).catch(() => null);
-            if (m) await m.delete();
-            triedDeletes.push("public message");
-          } catch { }
-        }
-
-        // Mark as cancelled
-        req.status = STATUS.CANCELLED;
-        req.messageId = null;
-        req.publicMessageId = null;
-        await req.save();
-
-        // Log the action
-        await logLFAction(client, config, 'cancel', req, interaction.user);
-
-        // 📩 DM Notification
-        try {
-          const cancelDmEmbed = new EmbedBuilder()
-            .setTitle("🚫 Request Cancelled")
-            .setColor(Colors.Orange)
-            .setDescription(
-              `>>> **Game:** ${req.game}\n` +
-              `**Type:** ${req.type}\n` +
-              `**Request ID:** \`${req._id}\`\n` +
-              `**Status:** Cancelled\n` +
-              `**Action:** Your request has been cancelled\n` +
-              `**Messages Deleted:** ${triedDeletes.length ? triedDeletes.join(", ") : "None"}`
-            )
-            .setFooter({ text: `Request ID: ${req._id}` })
-            .setTimestamp();
-          
-          await interaction.user.send({ embeds: [cancelDmEmbed] });
-        } catch (error) {
-          logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request cancellation.`);
-        }
-
-        return interaction.reply({
-          embeds: [createSuccessEmbed("Request Cancelled", `Your request \`${req._id}\` has been cancelled.${triedDeletes.length ? ` Deleted: ${triedDeletes.join(", ")}` : ""}`, STATUS.CANCELLED)],
+        // Reply immediately to prevent interaction timeout
+        await interaction.reply({
+          embeds: [createSuccessEmbed("Request Cancelled", `Your request \`${req._id}\` has been cancelled.`, STATUS.CANCELLED)],
           flags: MessageFlags.Ephemeral,
         });
+
+        // Continue with cleanup operations after reply
+        const triedDeletes = [];
+
+        try {
+          // Get game-specific channels
+          const channels = getGameChannels(config, req.game);
+
+          // Try deleting review message
+          if (req.messageId) {
+            try {
+              const ch = await client.channels.fetch(channels.reviewChannelId);
+              const m = await ch.messages.fetch(req.messageId).catch(() => null);
+              if (m) await m.delete();
+              triedDeletes.push("review message");
+            } catch (error) {
+              logger.warn(`Failed to delete review message for request ${req._id}: ${error.message}`);
+            }
+          }
+
+          // Try deleting public message
+          if (req.publicMessageId) {
+            try {
+              const ch = await client.channels.fetch(channels.publicChannelId);
+              const m = await ch.messages.fetch(req.publicMessageId).catch(() => null);
+              if (m) await m.delete();
+              triedDeletes.push("public message");
+            } catch (error) {
+              logger.warn(`Failed to delete public message for request ${req._id}: ${error.message}`);
+            }
+          }
+
+          // Mark as cancelled
+          req.status = STATUS.CANCELLED;
+          req.messageId = null;
+          req.publicMessageId = null;
+          await req.save();
+
+          // Log the action
+          await logLFAction(client, config, 'cancel', req, interaction.user);
+
+          // 📩 DM Notification
+          try {
+            const cancelDmEmbed = new EmbedBuilder()
+              .setTitle("🚫 Request Cancelled")
+              .setColor(Colors.Orange)
+              .setDescription(
+                `>>> **Game:** ${req.game}\n` +
+                `**Type:** ${req.type}\n` +
+                `**Request ID:** \`${req._id}\`\n` +
+                `**Status:** Cancelled\n` +
+                `**Action:** Your request has been cancelled\n` +
+                `**Messages Deleted:** ${triedDeletes.length ? triedDeletes.join(", ") : "None"}`
+              )
+              .setFooter({ text: `Request ID: ${req._id}` })
+              .setTimestamp();
+            
+            await interaction.user.send({ embeds: [cancelDmEmbed] });
+          } catch (error) {
+            logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request cancellation.`);
+          }
+        } catch (error) {
+          logger.error(`Error during request cancellation cleanup for ${req._id}: ${error.message}`);
+        }
+
+        return;
       }
 
 
@@ -285,18 +297,20 @@ class RequestsCommand extends Command {
           });
         }
 
-        req.status = STATUS.PENDING;
-        req.reviewedBy = null;
-        req.messageId = null;
-        req.publicMessageId = null;
-        await req.save();
-
+        // Reply immediately to prevent interaction timeout
         await interaction.reply({
           embeds: [createSuccessEmbed("Request Resent", `Your request \`${req._id}\` has been resent for review.`, STATUS.PENDING)],
           flags: MessageFlags.Ephemeral,
         });
 
+        // Continue with resend operations after reply
         try {
+          req.status = STATUS.PENDING;
+          req.reviewedBy = null;
+          req.messageId = null;
+          req.publicMessageId = null;
+          await req.save();
+
           const author = await client.users.fetch(req.userId);
           const channels = getGameChannels(config, req.game);
           const reviewCh = await client.channels.fetch(channels.reviewChannelId);
@@ -368,44 +382,50 @@ class RequestsCommand extends Command {
           });
         }
 
-        // Soft delete the request
-        const result = await softDeleteRequest(id, interaction.guild.id);
-        
-        if (!result.success) {
-          return interaction.reply({
-            embeds: [createErrorEmbed("Delete Failed", result.error)],
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        // Log the action
-        await logLFAction(client, config, 'delete', result.request, interaction.user);
-
-        // 📩 DM Notification
-        try {
-          const deleteDmEmbed = new EmbedBuilder()
-            .setTitle("🗑️ Request Deleted")
-            .setColor(Colors.DarkRed)
-            .setDescription(
-              `>>> **Game:** ${result.request.game}\n` +
-              `**Type:** ${result.request.type}\n` +
-              `**Request ID:** \`${id}\`\n` +
-              `**Status:** Deleted\n` +
-              `**Action:** Your request has been permanently deleted\n` +
-              `**Note:** This action cannot be undone`
-            )
-            .setFooter({ text: `Request ID: ${id}` })
-            .setTimestamp();
-          
-          await interaction.user.send({ embeds: [deleteDmEmbed] });
-        } catch (error) {
-          logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request deletion.`);
-        }
-
-        return interaction.reply({
+        // Reply immediately to prevent interaction timeout
+        await interaction.reply({
           embeds: [createSuccessEmbed("Request Deleted", `Your request \`${id}\` has been deleted.`, STATUS.DELETED)],
           flags: MessageFlags.Ephemeral,
         });
+
+        // Continue with delete operations after reply
+        try {
+          // Soft delete the request
+          const result = await softDeleteRequest(id, interaction.guild.id);
+          
+          if (!result.success) {
+            logger.error(`Failed to soft delete request ${id}: ${result.error}`);
+            return;
+          }
+
+          // Log the action
+          await logLFAction(client, config, 'delete', result.request, interaction.user);
+
+          // 📩 DM Notification
+          try {
+            const deleteDmEmbed = new EmbedBuilder()
+              .setTitle("🗑️ Request Deleted")
+              .setColor(Colors.DarkRed)
+              .setDescription(
+                `>>> **Game:** ${result.request.game}\n` +
+                `**Type:** ${result.request.type}\n` +
+                `**Request ID:** \`${id}\`\n` +
+                `**Status:** Deleted\n` +
+                `**Action:** Your request has been permanently deleted\n` +
+                `**Note:** This action cannot be undone`
+              )
+              .setFooter({ text: `Request ID: ${id}` })
+              .setTimestamp();
+            
+            await interaction.user.send({ embeds: [deleteDmEmbed] });
+          } catch (error) {
+            logger.warn(`Could not DM user ${interaction.user.tag} (${interaction.user.id}) about their request deletion.`);
+          }
+        } catch (error) {
+          logger.error(`Error during request deletion for ${id}: ${error.message}`);
+        }
+
+        return;
       }
     } catch (err) {
       logger.error(`RequestsCommand error: ${err.stack}`);

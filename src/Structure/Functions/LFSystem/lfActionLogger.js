@@ -1,5 +1,5 @@
 const { EmbedBuilder, Colors } = require("discord.js");
-const { Logger } = require("./Logger");
+const { Logger } = require("../Logger");
 const logger = new Logger();
 
 /**
@@ -93,8 +93,27 @@ async function logLFAction(client, config, action, request, user, staff = null, 
  */
 function getGameChannels(config, game) {
     const gameKey = game.toLowerCase();
-    const gameChannels = config.gameChannels?.[gameKey];
     
+    // Try to get from JSON config files first
+    try {
+        const modalHandler = require("./modalHandler");
+        const lfpConfig = modalHandler.lfpConfig;
+        const lftConfig = modalHandler.lftConfig;
+        
+        // Check both LFP and LFT configs for the game
+        const gameConfig = lfpConfig[gameKey] || lftConfig[gameKey];
+        if (gameConfig) {
+            return {
+                reviewChannelId: gameConfig.reviewChannel,
+                publicChannelId: gameConfig.publicChannel
+            };
+        }
+    } catch (error) {
+        logger.warn(`Failed to load game config for ${game}: ${error.message}`);
+    }
+    
+    // Fallback to legacy config structure
+    const gameChannels = config.gameChannels?.[gameKey];
     if (gameChannels) {
         return {
             reviewChannelId: gameChannels.reviewChannelId,
@@ -102,7 +121,7 @@ function getGameChannels(config, game) {
         };
     }
     
-    // Fallback to legacy channels
+    // Final fallback to legacy channels
     return {
         reviewChannelId: config.valoReviewChannelId,
         publicChannelId: config.valolfpLftChannelId

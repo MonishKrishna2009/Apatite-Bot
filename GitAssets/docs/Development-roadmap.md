@@ -1,21 +1,35 @@
 # 🗺️ Development Roadmap
 
 ## 📍 Phase 1 – Core Competitive Features (High Priority)
-1. LFP / LFT System
+1. LFP / LFT System ✅ **COMPLETED**
     - [x] Core Features (MVP)
         - [x] Player Post Creation (role, rank, region, availability)
         - [x] Team Post Creation (team name, roles needed, rank requirements)
         - [x] Database Storage for LFP/LFT posts
-    - [ ] Post Management
-        - [x] List all user request with detailed information
-        - [x] Request cancelation for pending/aproved posts
+        - [x] Multi-game Support (Valorant, CS2, LoL)
+        - [x] JSON Configuration System
+        - [x] Dynamic Modal Generation
+    - [x] Post Management
+        - [x] List all user requests with detailed information
+        - [x] Request cancellation for pending/approved posts
         - [x] Resend request for expired/archived posts
-        - [x] Expire / Auto-Remove Old & ignored review posts
-        - [ ] Edit / Update LFP or LFT Posts
-    - [ ] Advanced Features (Stretch Goals)
+        - [x] Edit/Update LFP or LFT Posts
+        - [x] Soft delete functionality
+        - [x] Expire/Auto-Remove Old & ignored review posts
+        - [x] Auto-cleanup system with archiving
+    - [x] Advanced Features
+        - [x] Game-specific channel routing
+        - [x] Comprehensive action logging
+        - [x] Detailed DM notifications
+        - [x] Permission system with role-based access
+        - [x] Smart edit logic (resets approved requests for review)
+        - [x] Request lifecycle management
+    - [ ] Future Enhancements (Stretch Goals)
         - [ ] Player Profiles Integration (track rank history, past teams)
         - [ ] Team Profiles Integration (track past rosters, tournament history)
         - [ ] Cross-Server Sync (share posts between partnered servers)
+        - [ ] Advanced filtering and search
+        - [ ] Request analytics and insights
 
 2. Tournament System
     - [ ] Core Tournament Basics (MVP)

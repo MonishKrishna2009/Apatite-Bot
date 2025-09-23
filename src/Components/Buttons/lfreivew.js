@@ -4,7 +4,7 @@ const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
-const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
 
 class LFReviewHandler extends Component {
     constructor(client) {

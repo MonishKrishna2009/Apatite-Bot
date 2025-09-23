@@ -11,10 +11,11 @@ const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
-const { cleanupRequests } = require("../../Structure/Functions/requestCleanup");
-const { checkActiveRequests } = require("../../Structure/Functions/activeRequest");
-const { STATUS, createSuccessEmbed, createErrorEmbed } = require("../../Structure/Functions/lfHelpers");
-const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
+const { cleanupRequests } = require("../../Structure/Functions/LFSystem/requestCleanup");
+const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
+const { STATUS, createSuccessEmbed, createErrorEmbed } = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
+const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 
 class LFPCreateModal extends Component {
   constructor(client) {
@@ -36,23 +37,22 @@ class LFPCreateModal extends Component {
     // ✅ Check active request limit
     if (await checkActiveRequests(interaction, "LFP", config)) return;
 
-    // Collect modal fields
-    const teamName = interaction.fields.getTextInputValue("teamName");
-    const rolesNeeded = interaction.fields.getTextInputValue("rolesNeeded");
-    const peakRank = interaction.fields.getTextInputValue("peakRank");
-    const currentRank = interaction.fields.getTextInputValue("currentRank");
-    const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
-
-    const content = { teamName, rolesNeeded, peakRank, currentRank, additionalInfo };
+    // Extract content using modal handler
+    const content = modalHandler.extractContent(interaction, "lfp", game);
 
     // 💾 Save request
+    const now = new Date();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + config.RequestExpiryDays);
+    
     const req = await LFRequest.create({
       userId: user.id,
       guildId: guild.id,
       type: "LFP",
       game: game.charAt(0).toUpperCase() + game.slice(1),
       status: STATUS.PENDING,
-      createdAt: new Date(),
+      createdAt: now,
+      expiresAt: expiresAt,
       content,
     });
 
@@ -63,11 +63,7 @@ class LFPCreateModal extends Component {
       .setColor(Colors.Grey)
       .setDescription(
         `>>> **User:** <@${user.id}>\n` +
-        `**Team Name:** ${teamName}\n` +
-        `**Roles Needed:** ${rolesNeeded}\n` +
-        `**Peak Rank:** ${peakRank}\n` +
-        `**Current Rank:** ${currentRank}\n` +
-        `**Additional Info:** ${additionalInfo}`
+        modalHandler.generateEmbedDescription(content, "lfp", game)
       )
       .setFooter({ text: `Request ID: ${req._id}` })
       .setTimestamp();
@@ -84,6 +80,13 @@ class LFPCreateModal extends Component {
     );
 
     const reviewChannel = guild.channels.cache.get(channels.reviewChannelId);
+    if (!reviewChannel) {
+      logger.error(`Review channel not found: ${channels.reviewChannelId} for game ${game}`);
+      return interaction.reply({
+        embeds: [createErrorEmbed("Configuration Error", `Review channel not found for ${game}. Please contact an administrator.`)],
+        flags: MessageFlags.Ephemeral
+      });
+    }
     const msg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
 
     req.messageId = msg.id;
@@ -105,12 +108,9 @@ class LFPCreateModal extends Component {
       .setDescription(
         `>>> **Game:** ${req.game}\n` +
         `**User:** <@${user.id}>\n` +
-        `**Team Name:** ${teamName}\n` +
-        `**Roles Needed:** ${rolesNeeded}\n` +
-        `**Peak Rank:** ${peakRank}\n` +
-        `**Current Rank:** ${currentRank}\n` +
-        `**Additional Info:** ${additionalInfo}\n\n` +
-        `**Status:** Pending Review\n`
+        modalHandler.generateEmbedDescription(content, "lfp", game) + '\n\n' +
+        `**Status:** Pending Review\n` +
+        `**Expires:** <t:${Math.floor(req.expiresAt.getTime() / 1000)}:R>\n`
       )
       .setFooter({ text: `Request ID: ${req._id}` })
       .setTimestamp();

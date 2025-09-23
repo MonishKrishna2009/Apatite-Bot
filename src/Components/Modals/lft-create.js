@@ -11,10 +11,11 @@ const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
-const { cleanupRequests } = require("../../Structure/Functions/requestCleanup");
-const { checkActiveRequests } = require("../../Structure/Functions/activeRequest");
-const { STATUS, createSuccessEmbed, createErrorEmbed } = require("../../Structure/Functions/lfHelpers");
-const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
+const { cleanupRequests } = require("../../Structure/Functions/LFSystem/requestCleanup");
+const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
+const { STATUS, createSuccessEmbed, createErrorEmbed } = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
+const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 
 class LFTCreateModal extends Component {
   constructor(client) {
@@ -36,70 +37,22 @@ class LFTCreateModal extends Component {
     // ✅ Check active request limit
     if (await checkActiveRequests(interaction, "LFT", config)) return;
 
-    // Collect modal fields based on game
-    let content, embedDesc;
-    
-    switch (game) {
-      case "valorant":
-        const riotID = interaction.fields.getTextInputValue("riotID");
-        const rolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");
-        const peakRank = interaction.fields.getTextInputValue("peakRank");
-        const recentTeams = interaction.fields.getTextInputValue("recentTeams") || "N/A";
-        const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
-
-        content = { riotID, rolesPlayed, peakRank, recentTeams, additionalInfo };
-        embedDesc = 
-          `>>> **User:** <@${user.id}>\n` +
-          `**Riot ID:** ${riotID}\n` +
-          `**Roles Played:** ${rolesPlayed}\n` +
-          `**Peak/Current Rank:** ${peakRank}\n` +
-          `**Recent Teams:** ${recentTeams}\n` +
-          `**Additional Info:** ${additionalInfo}`;
-        break;
-      
-      case "cs2":
-        const steamID = interaction.fields.getTextInputValue("steamID");
-        const cs2RolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");
-        const cs2PeakRank = interaction.fields.getTextInputValue("peakRank");
-        const cs2RecentTeams = interaction.fields.getTextInputValue("recentTeams") || "N/A";
-        const cs2AdditionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
-
-        content = { steamID, rolesPlayed: cs2RolesPlayed, peakRank: cs2PeakRank, recentTeams: cs2RecentTeams, additionalInfo: cs2AdditionalInfo };
-        embedDesc = 
-          `>>> **User:** <@${user.id}>\n` +
-          `**Steam ID:** ${steamID}\n` +
-          `**Roles Played:** ${cs2RolesPlayed}\n` +
-          `**Peak/Current Rank:** ${cs2PeakRank}\n` +
-          `**Recent Teams:** ${cs2RecentTeams}\n` +
-          `**Additional Info:** ${cs2AdditionalInfo}`;
-        break;
-      
-      case "lol":
-        const summonerName = interaction.fields.getTextInputValue("summonerName");
-        const lolRolesPlayed = interaction.fields.getTextInputValue("rolesPlayed");
-        const lolPeakRank = interaction.fields.getTextInputValue("peakRank");
-        const lolRecentTeams = interaction.fields.getTextInputValue("recentTeams") || "N/A";
-        const lolAdditionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
-
-        content = { summonerName, rolesPlayed: lolRolesPlayed, peakRank: lolPeakRank, recentTeams: lolRecentTeams, additionalInfo: lolAdditionalInfo };
-        embedDesc = 
-          `>>> **User:** <@${user.id}>\n` +
-          `**Summoner Name:** ${summonerName}\n` +
-          `**Roles Played:** ${lolRolesPlayed}\n` +
-          `**Peak/Current Rank:** ${lolPeakRank}\n` +
-          `**Recent Teams:** ${lolRecentTeams}\n` +
-          `**Additional Info:** ${lolAdditionalInfo}`;
-        break;
-    }
+    // Extract content using modal handler
+    const content = modalHandler.extractContent(interaction, "lft", game);
 
     // 💾 Save request
+    const now = new Date();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + config.RequestExpiryDays);
+    
     const req = await LFRequest.create({
       userId: user.id,
       guildId: guild.id,
       type: "LFT",
       game: game.charAt(0).toUpperCase() + game.slice(1),
       status: STATUS.PENDING,
-      createdAt: new Date(),
+      createdAt: now,
+      expiresAt: expiresAt,
       content,
     });
 
@@ -108,7 +61,10 @@ class LFTCreateModal extends Component {
       .setTitle("🔎 LFT Request (Pending Review)")
       .setThumbnail(user.displayAvatarURL({ dynamic: true }))
       .setColor(Colors.Grey)
-      .setDescription(embedDesc)
+      .setDescription(
+        `>>> **User:** <@${user.id}>\n` +
+        modalHandler.generateEmbedDescription(content, "lft", game)
+      )
       .setFooter({ text: `Request ID: ${req._id}` })
       .setTimestamp();
 
@@ -124,6 +80,13 @@ class LFTCreateModal extends Component {
     );
 
     const reviewChannel = guild.channels.cache.get(channels.reviewChannelId);
+    if (!reviewChannel) {
+      logger.error(`Review channel not found: ${channels.reviewChannelId} for game ${game}`);
+      return interaction.reply({
+        embeds: [createErrorEmbed("Configuration Error", `Review channel not found for ${game}. Please contact an administrator.`)],
+        flags: MessageFlags.Ephemeral
+      });
+    }
     const msg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
 
     req.messageId = msg.id;
@@ -144,8 +107,9 @@ class LFTCreateModal extends Component {
       .setColor(Colors.Blue)
       .setDescription(
         `>>> **Game:** ${req.game}\n` +
-        embedDesc.replace('>>> ', '') + '\n\n' +
-        `**Status:** Pending Review\n`
+        modalHandler.generateEmbedDescription(content, "lft", game) + '\n\n' +
+        `**Status:** Pending Review\n` +
+        `**Expires:** <t:${Math.floor(req.expiresAt.getTime() / 1000)}:R>\n`
       )
       .setFooter({ text: `Request ID: ${req._id}` })
       .setTimestamp();

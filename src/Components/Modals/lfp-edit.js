@@ -11,8 +11,9 @@ const LFRequest = require("../../Structure/Schemas/LookingFor/lfplft");
 const config = require("../../Structure/Configs/config");
 const { Logger } = require("../../Structure/Functions/Logger");
 const logger = new Logger();
-const { STATUS, createSuccessEmbed, createErrorEmbed, canUserPerformAction } = require("../../Structure/Functions/lfHelpers");
-const { logLFAction, getGameChannels } = require("../../Structure/Functions/lfActionLogger");
+const { STATUS, createSuccessEmbed, createErrorEmbed, canUserPerformAction } = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
+const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 
 class LFPEditModal extends Component {
   constructor(client) {
@@ -43,14 +44,8 @@ class LFPEditModal extends Component {
       });
     }
 
-    // Collect modal fields
-    const teamName = interaction.fields.getTextInputValue("teamName");
-    const rolesNeeded = interaction.fields.getTextInputValue("rolesNeeded");
-    const peakRank = interaction.fields.getTextInputValue("peakRank");
-    const currentRank = interaction.fields.getTextInputValue("currentRank");
-    const additionalInfo = interaction.fields.getTextInputValue("additionalInfo") || "N/A";
-
-    const content = { teamName, rolesNeeded, peakRank, currentRank, additionalInfo };
+    // Extract content using modal handler
+    const content = modalHandler.extractContent(interaction, "lfp", req.game.toLowerCase());
 
     // Get game-specific channels
     const channels = getGameChannels(config, req.game);
@@ -68,29 +63,30 @@ class LFPEditModal extends Component {
         }
       }
 
-      // Reset request to pending
+      // Reset request to pending and extend expiry
       req.status = STATUS.PENDING;
       req.reviewedBy = null;
       req.publicMessageId = null;
       req.messageId = null;
+      
+      // Extend expiry date for edited requests
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + config.RequestExpiryDays);
+      req.expiresAt = newExpiresAt;
     }
 
     // Update request content
     req.content = content;
     await req.save();
 
-    // Create new review message
+    // Create review embed
     const reviewEmbed = new EmbedBuilder()
       .setTitle("👥 LFP Request (Pending Review)")
       .setThumbnail(user.displayAvatarURL({ dynamic: true }))
       .setColor(Colors.Grey)
       .setDescription(
         `>>> **User:** <@${user.id}>\n` +
-        `**Team Name:** ${teamName}\n` +
-        `**Roles Needed:** ${rolesNeeded}\n` +
-        `**Peak Rank:** ${peakRank}\n` +
-        `**Current Rank:** ${currentRank}\n` +
-        `**Additional Info:** ${additionalInfo}`
+        modalHandler.generateEmbedDescription(content, "lfp", req.game.toLowerCase())
       )
       .setFooter({ text: `Request ID: ${req._id}` })
       .setTimestamp();
@@ -106,12 +102,35 @@ class LFPEditModal extends Component {
         .setStyle(ButtonStyle.Danger)
     );
 
-    // Send to review channel
+    // Handle review message based on status
     const reviewChannel = guild.channels.cache.get(channels.reviewChannelId);
-    const reviewMsg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
     
-    req.messageId = reviewMsg.id;
-    await req.save();
+    if (req.status === STATUS.PENDING && req.messageId) {
+      // Update existing review message if request is still pending
+      try {
+        const existingMsg = await reviewChannel.messages.fetch(req.messageId).catch(() => null);
+        if (existingMsg) {
+          await existingMsg.edit({ embeds: [reviewEmbed], components: [row] });
+          logger.info(`Updated existing review message for LFP request ${req._id}`);
+        } else {
+          // If message doesn't exist, create a new one
+          const reviewMsg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
+          req.messageId = reviewMsg.id;
+          await req.save();
+        }
+      } catch (error) {
+        logger.warn(`Failed to update review message for request ${req._id}: ${error.message}`);
+        // Fallback: create new message
+        const reviewMsg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
+        req.messageId = reviewMsg.id;
+        await req.save();
+      }
+    } else {
+      // Create new review message for approved requests or if no existing message
+      const reviewMsg = await reviewChannel.send({ embeds: [reviewEmbed], components: [row] });
+      req.messageId = reviewMsg.id;
+      await req.save();
+    }
 
     // Log the action
     await logLFAction(interaction.client, config, 'edit', req, user);
@@ -131,7 +150,8 @@ class LFPEditModal extends Component {
           `>>> **Game:** ${req.game}\n` +
           `**Request ID:** \`${req._id}\`\n` +
           `**Status:** ${req.status}\n` +
-          `**Action:** Your request has been updated and ${req.status === STATUS.PENDING ? 'sent for review' : 'updated'}\n`
+          `**Action:** Your request has been updated${req.status === STATUS.PENDING ? ' and the review message has been refreshed' : ' and sent for review'}\n` +
+          `**Expires:** <t:${Math.floor(req.expiresAt.getTime() / 1000)}:R>\n`
         )
         .setFooter({ text: `Request ID: ${req._id}` })
         .setTimestamp();

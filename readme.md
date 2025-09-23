@@ -26,10 +26,14 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 ## ✨ Features 
 
 - 👥 **LFP / LFT System**
-  - Submit requests for **Looking For Players (LFP)** or **Looking For Team (LFT)**
-  - Staff review system with approvals/declines
-  - Automatic posting to public channels
-  - User controls: create, list, cancel, resend
+  - **Multi-game Support**: Valorant, CS2, League of Legends (easily extensible)
+  - **JSON Configuration**: Games and fields defined in config files, no code changes needed
+  - **Dynamic Modals**: Modal fields generated automatically from JSON configuration
+  - **Staff Review System**: Approvals/declines with comprehensive logging
+  - **Auto-cleanup**: Automatic expiration and archiving of old requests
+  - **User Controls**: Create, edit, cancel, resend requests
+  - **Game-Specific Channels**: Separate review and public channels for each game
+  - **Comprehensive Notifications**: Detailed DM notifications for all actions
   - [Read More →](./GitAssets/docs/Lfp-Lft%20System.md)
 
 - 🎫 **Ticket System**

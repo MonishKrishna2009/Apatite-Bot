@@ -1,5 +1,5 @@
 const { EmbedBuilder, Colors, MessageFlags } = require("discord.js");
-const LFRequest = require("../Schemas/LookingFor/lfplft");
+const LFRequest = require("../../Schemas/LookingFor/lfplft");
 
 /**
  * Checks if a user has exceeded the max active requests.

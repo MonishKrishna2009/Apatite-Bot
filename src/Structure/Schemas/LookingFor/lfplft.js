@@ -16,7 +16,7 @@ const LFRequestSchema = new Schema({
     publicMessageId: { type: String, default: null }, // Public channel message
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
-    expiresAt: { type: Date, default: null }, // When request expires
+    expiresAt: { type: Date, required: true }, // When request will expire
     archivedAt: { type: Date, default: null }, // When request was archived
     deletedAt: { type: Date, default: null } // When request was soft deleted
 });

@@ -56,6 +56,11 @@ const SKIP_PATTERNS = [
     '.cursorignore',
     'lfp.json',
     'lft.json',
+    '.bun',
+    '.github',
+    'GitAssets',
+    'assets',
+    'docs'
 ];
 
 // File extensions to process

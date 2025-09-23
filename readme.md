@@ -123,9 +123,8 @@ TICKET_TRANSCRIPT_CHANEL_ID = ""
 TICKET_CATEGORY = ""
 
 #LFP LFT Stuff
-VALO_LFP_LFT_CHANNEL_ID = ""
-VALO_LF_REVIEW_CHANNEL_ID = ""
-VALO_LF_MOD_ROLE_ID = ""
+LF_ACTION_LOG_CHANNEL_ID= "1419819282329763890"
+LF_MOD_ROLE_ID = "1416665731340177458"
 ```
 
 2. Fill your dev user/dev guild details in `config.js`
@@ -185,5 +184,33 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 ---
 
-## 📜 License 
-This project is licensed under the **Apache-2.0** License. See [LICENSE](LICENSE) for details.
+## 📄 License
+
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0-or-later).
+
+### 🔓 What this means:
+
+- ✅ **Free to use** - You can use this software for any purpose
+- ✅ **Free to modify** - You can change the code to suit your needs  
+- ✅ **Free to distribute** - You can share copies with others
+- ✅ **Source code available** - Full source code is provided
+- ⚠️ **Copyleft** - Any derivative works must also be GPL v3.0 licensed
+
+### 📋 Requirements for users:
+
+- **Attribution** - You must include the original copyright notice
+- **License preservation** - You must include the GPL v3.0 license text
+- **Source code** - If you distribute the software, you must provide source code
+- **No additional restrictions** - You cannot add proprietary restrictions
+
+### 🔗 Legal Resources:
+
+- [GPL v3.0 License Text](https://www.gnu.org/licenses/gpl-3.0.html)
+- [GPL v3.0 FAQ](https://www.gnu.org/licenses/gpl-faq.html)
+- [Free Software Foundation](https://www.fsf.org/)
+
+### ⚖️ Compliance:
+
+This project includes automated license compliance checking to ensure all source files contain proper GPL v3.0 headers and that the project meets all legal requirements. [(REFER THIS)](./GitAssets/docs/License-Enforcement.md)
+
+---

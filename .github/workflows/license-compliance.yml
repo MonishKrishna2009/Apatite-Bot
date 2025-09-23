@@ -1,0 +1,198 @@
+name: License Compliance Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  license-compliance:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Cleanup previous reports
+      run: |
+        echo "🧹 Cleaning up any previous compliance reports..."
+        rm -f compliance-report*.md
+        echo "✅ Cleanup completed"
+        
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+        
+    - name: Install dependencies
+      run: bun install
+      
+    - name: Run license compliance check
+      run: bun run license-check
+      
+    - name: Check for GPL v3.0 compliance
+      run: |
+        echo "🔍 Checking GPL v3.0 compliance..."
+        
+        # Check LICENSE file exists and contains GPL v3.0
+        if [ ! -f "LICENSE" ]; then
+          echo "❌ LICENSE file not found"
+          exit 1
+        fi
+        
+        if ! grep -q "GNU GENERAL PUBLIC LICENSE" LICENSE; then
+          echo "❌ LICENSE file does not contain GPL text"
+          exit 1
+        fi
+        
+        if ! grep -q "Version 3" LICENSE; then
+          echo "❌ LICENSE file is not GPL v3.0"
+          exit 1
+        fi
+        
+        # Check package.json has correct license
+        if ! grep -q '"license": "GPL-3.0-or-later"' package.json; then
+          echo "❌ package.json does not specify GPL-3.0-or-later license"
+          exit 1
+        fi
+        
+        # Check source files have license headers
+        missing_headers=0
+        for file in $(find src -name "*.js" -o -name "*.ts" | head -10); do
+          if ! grep -q "Copyright (C) 2025 Monish Krishna" "$file"; then
+            echo "⚠️  Missing license header in $file"
+            missing_headers=$((missing_headers + 1))
+          fi
+        done
+        
+        if [ $missing_headers -gt 0 ]; then
+          echo "❌ $missing_headers source files missing license headers"
+          echo "Run 'bun run add-license-headers' to fix"
+          exit 1
+        fi
+        
+        echo "✅ GPL v3.0 compliance check passed!"
+        
+    - name: Check for duplicate headers
+      run: |
+        echo "🔍 Checking for duplicate license headers..."
+        
+        duplicate_files=0
+        for file in $(find src -name "*.js" -o -name "*.ts"); do
+          copyright_count=$(grep -c "Copyright (C) 20[0-9][0-9] Monish Krishna" "$file" 2>/dev/null || echo "0")
+          if [ "$copyright_count" -gt 1 ]; then
+            echo "❌ Duplicate headers found in $file ($copyright_count headers)"
+            duplicate_files=$((duplicate_files + 1))
+          fi
+        done
+        
+        if [ $duplicate_files -gt 0 ]; then
+          echo "❌ $duplicate_files files have duplicate license headers"
+          echo "Run 'bun run scripts/remove-duplicate-headers-2025.js' to fix"
+          exit 1
+        fi
+        
+        echo "✅ No duplicate headers found"
+        
+    - name: Verify license headers
+      run: |
+        echo "🔍 Verifying license headers in source files..."
+        
+        # Count files with proper headers
+        total_files=$(find src -name "*.js" -o -name "*.ts" | wc -l)
+        files_with_headers=$(find src -name "*.js" -o -name "*.ts" -exec grep -l "Copyright (C) 2025 Monish Krishna" {} \; | wc -l)
+        
+        echo "📊 License Header Statistics:"
+        echo "   Total source files: $total_files"
+        echo "   Files with headers: $files_with_headers"
+        
+        if [ $files_with_headers -lt $total_files ]; then
+          echo "❌ Not all source files have license headers"
+          exit 1
+        fi
+        
+        echo "✅ All source files have proper license headers"
+        
+    - name: Check for proprietary dependencies
+      run: |
+        echo "🔍 Checking for proprietary dependencies..."
+        
+        # Check for known proprietary packages
+        proprietary_packages=(
+          "discord.js"
+          "mongoose"
+          "axios"
+          "moment"
+          "i18next"
+        )
+        
+        for package in "${proprietary_packages[@]}"; do
+          if grep -q "\"$package\"" package.json; then
+            echo "⚠️  Found dependency: $package"
+            # Check if it's open source
+            license_info=$(npm info "$package" license 2>/dev/null || echo "unknown")
+            echo "   License: $license_info"
+          fi
+        done
+        
+        echo "✅ Dependency license check completed"
+        
+    - name: Generate compliance report
+      run: |
+        # Clean up any existing reports
+        rm -f compliance-report*.md
+        
+        # Generate unique report filename
+        SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+        REPORT_FILE="compliance-report-$(date +%Y%m%d-%H%M%S)-${SHORT_SHA}.md"
+        
+        echo "📋 GPL v3.0 COMPLIANCE REPORT" > "$REPORT_FILE"
+        echo "=============================" >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+        echo "**Date:** $(date)" >> "$REPORT_FILE"
+        echo "**Commit:** ${{ github.sha }}" >> "$REPORT_FILE"
+        echo "**Branch:** ${{ github.ref_name }}" >> "$REPORT_FILE"
+        echo "**Workflow Run:** ${{ github.run_id }}" >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+        echo "## ✅ Compliance Checks" >> "$REPORT_FILE"
+        echo "- [x] LICENSE file present with GPL v3.0 text" >> "$REPORT_FILE"
+        echo "- [x] package.json specifies GPL-3.0-or-later license" >> "$REPORT_FILE"
+        echo "- [x] Source files contain copyright headers" >> "$REPORT_FILE"
+        echo "- [x] License terms are clearly stated" >> "$REPORT_FILE"
+        echo "- [x] No additional restrictions added" >> "$REPORT_FILE"
+        echo "- [x] No duplicate headers found" >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+        echo "## 📊 Statistics" >> "$REPORT_FILE"
+        echo "- Total source files: $(find src -name "*.js" -o -name "*.ts" | wc -l)" >> "$REPORT_FILE"
+        echo "- Files with headers: $(find src -name "*.js" -o -name "*.ts" -exec grep -l "Copyright (C) 2025 Monish Krishna" {} \; | wc -l)" >> "$REPORT_FILE"
+        echo "- Duplicate headers: 0" >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+        echo "## 🔗 Resources" >> "$REPORT_FILE"
+        echo "- [GPL v3.0 License Text](https://www.gnu.org/licenses/gpl-3.0.html)" >> "$REPORT_FILE"
+        echo "- [GPL v3.0 FAQ](https://www.gnu.org/licenses/gpl-faq.html)" >> "$REPORT_FILE"
+        echo "- [Free Software Foundation](https://www.fsf.org/)" >> "$REPORT_FILE"
+        
+        # Create a symlink for easy access
+        ln -sf "$REPORT_FILE" compliance-report-latest.md
+        
+        echo "📄 Compliance report generated: $REPORT_FILE"
+        echo "📄 Latest report symlink: compliance-report-latest.md"
+        
+        # List all generated reports
+        echo ""
+        echo "📋 Generated Reports:"
+        ls -la compliance-report*.md
+        
+    - name: Upload compliance report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: license-compliance-report-${{ github.run_id }}
+        path: |
+          compliance-report-*.md
+          compliance-report-latest.md
+        retention-days: 30

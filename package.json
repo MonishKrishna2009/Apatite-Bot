@@ -1,7 +1,27 @@
 {
-  "name": "monk-bot",
-  "module": "index.js",
+  "name": "apatite-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot with LFP/LFT system, ticket system, and comprehensive logging",
+  "main": "index.js",
   "type": "module",
+  "license": "GPL-3.0-or-later",
+  "author": "Monish Krishna",
+  "homepage": "https://github.com/yourusername/apatite-bot",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/apatite-bot.git"
+  },
+  "scripts": {
+    "start": "bun run index.js",
+    "dev": "bun run --watch index.js",
+    "add-license-headers": "bun run scripts/add-license-headers.js",
+    "add-src-headers": "bun run scripts/add-src-headers.js",
+    "check-license-compliance": "bun run scripts/license-compliance-check.js",
+    "license-check": "bun run scripts/license-compliance-check.js",
+    "show-warranty": "echo 'This program comes with ABSOLUTELY NO WARRANTY; for details type show w.'",
+    "show-conditions": "echo 'This is free software, and you are welcome to redistribute it under certain conditions; type show c for details.'",
+    "license-info": "echo 'Apatite Bot - Copyright (C) 2025 Monish Krishna - Licensed under GPL v3.0'"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

@@ -87,6 +87,9 @@ class Ready extends Event {
     } catch (error) {
       logger.error("Failed to initialize LogManager:", error);
     }
+
+    // 🎉 Bot startup success message
+    console.log(`🚀 APATITE BOT HAS STARTED SUCCESSFULLY!`);
   }
 }
 

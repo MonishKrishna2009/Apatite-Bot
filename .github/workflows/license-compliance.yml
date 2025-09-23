@@ -102,11 +102,16 @@ jobs:
       run: |
         echo "🔍 Verifying license headers in source files..."
         
-        # Count files with proper headers
-        total_files=$(find src -name "*.js" -o -name "*.ts" | wc -l)
-        files_with_headers=$(find src -name "*.js" -o -name "*.ts" -exec grep -l "Copyright (C) 2025 Monish Krishna" {} \; | wc -l)
+        # Use the existing license compliance check script
+        echo "Running comprehensive license compliance check..."
+        bun run license-check
         
-        echo "📊 License Header Statistics:"
+        # Additional verification
+        echo ""
+        echo "📊 Additional License Header Statistics:"
+        total_files=$(find src -name "*.js" -o -name "*.ts" | wc -l)
+        files_with_headers=$(grep -r "Copyright (C) 2025 Monish Krishna" src/ --include="*.js" --include="*.ts" -l | wc -l)
+        
         echo "   Total source files: $total_files"
         echo "   Files with headers: $files_with_headers"
         
@@ -142,6 +147,7 @@ jobs:
         echo "✅ Dependency license check completed"
         
     - name: Generate compliance report
+      if: always()
       run: |
         # Clean up any existing reports
         rm -f compliance-report*.md
@@ -168,7 +174,7 @@ jobs:
         echo "" >> "$REPORT_FILE"
         echo "## 📊 Statistics" >> "$REPORT_FILE"
         echo "- Total source files: $(find src -name "*.js" -o -name "*.ts" | wc -l)" >> "$REPORT_FILE"
-        echo "- Files with headers: $(find src -name "*.js" -o -name "*.ts" -exec grep -l "Copyright (C) 2025 Monish Krishna" {} \; | wc -l)" >> "$REPORT_FILE"
+        echo "- Files with headers: $(grep -r "Copyright (C) 2025 Monish Krishna" src/ --include="*.js" --include="*.ts" -l | wc -l)" >> "$REPORT_FILE"
         echo "- Duplicate headers: 0" >> "$REPORT_FILE"
         echo "" >> "$REPORT_FILE"
         echo "## 🔗 Resources" >> "$REPORT_FILE"

@@ -47,7 +47,7 @@ bun run scripts/license-compliance-check.js
    - Must include repository URL
 
 3. **Source Files**
-   - Must contain copyright notice: `Copyright (C) 2025 Monk` or later year's
+   - Must contain copyright notice: `Copyright (C) 2025 Monish Krishna` or later year's
    - Must reference GPL v3.0 license
    - Must include license text or reference to LICENSE file
 

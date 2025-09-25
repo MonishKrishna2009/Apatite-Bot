@@ -22,14 +22,16 @@ const { Logger } = require("../Logger");
 const logger = new Logger();
 
 /**
- * Logs LF actions for accountability
- * @param {Object} client - Discord client
- * @param {Object} config - Configuration object
- * @param {string} action - Action performed
- * @param {Object} request - LFRequest document
- * @param {Object} user - User who performed the action
- * @param {Object} staff - Staff member (if applicable)
- * @param {string} reason - Reason for action (if applicable)
+ * Send a formatted log embed to the configured LF action log channel describing a leaderboard/request-related action.
+ *
+ * When a `request` is provided the embed includes request metadata and a short preview of up to three content fields.
+ * When `request` is null the embed contains a summary for bulk or system-level actions and includes optional staff and reason.
+ *
+ * @param {string} action - Action identifier (e.g., "create", "approve", "delete", "legacy_clean", "bulk_cleanup", "system_action").
+ * @param {Object|null} request - LFRequest document to log; pass `null` for bulk/system actions.
+ * @param {Object} user - User who performed the action (object containing at least `id` and `tag`).
+ * @param {Object|null} [staff=null] - Staff member involved, if applicable (object containing at least `id` and `tag`).
+ * @param {string|null} [reason=null] - Optional reason or note describing the action.
  */
 async function logLFAction(client, config, action, request, user, staff = null, reason = null) {
     try {

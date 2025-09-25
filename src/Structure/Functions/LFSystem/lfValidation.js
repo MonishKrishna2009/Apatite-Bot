@@ -61,9 +61,9 @@ function validateUserId(userId) {
 }
 
 /**
- * Validate Discord guild ID format
- * @param {string} guildId - Guild ID to validate
- * @returns {boolean} - Whether ID is valid
+ * Determine whether a string is a valid Discord guild ID.
+ * @param {string} guildId - The guild ID to validate.
+ * @returns {boolean} `true` if the value is a string of 17 to 19 digits, `false` otherwise.
  */
 function validateGuildId(guildId) {
     if (!guildId || typeof guildId !== 'string') return false;
@@ -71,9 +71,9 @@ function validateGuildId(guildId) {
 }
 
 /**
- * Validate Discord message ID format
- * @param {string} messageId - Message ID to validate
- * @returns {boolean} - Whether ID is valid
+ * Checks whether a Discord message ID is either absent or a valid 17–19 digit snowflake.
+ * @param {string|null|undefined} messageId - Message ID to validate; null or undefined is treated as valid.
+ * @returns {boolean} `true` if `messageId` is null/undefined or a string of 17–19 digits, `false` otherwise.
  */
 function validateMessageId(messageId) {
     if (!messageId) return true; // Null/undefined is valid
@@ -82,10 +82,10 @@ function validateMessageId(messageId) {
 }
 
 /**
- * Validate game configuration
- * @param {string} gameType - LFP or LFT
- * @param {string} game - Game key
- * @returns {ValidationResult} - Validation result
+ * Ensure a game's configuration for the specified LFP/LFT type is present and structurally valid.
+ * @param {string} gameType - 'lfp' or 'lft' (case-insensitive) identifying which configuration set to check.
+ * @param {string} game - Key of the game to validate within the selected configuration.
+ * @returns {ValidationResult} ValidationResult containing any configuration errors or warnings. 
  */
 function validateGameConfig(gameType, game) {
     const result = new ValidationResult();
@@ -145,11 +145,12 @@ function validateGameConfig(gameType, game) {
 }
 
 /**
- * Validate request content against game configuration
- * @param {Object} content - Request content
- * @param {string} gameType - LFP or LFT
- * @param {string} game - Game key
- * @returns {ValidationResult} - Validation result
+ * Validate form-like request content against the game's configured fields.
+ * 
+ * @param {Object} content - Key/value map of submitted field values (string values expected).
+ * @param {string} gameType - Game configuration type (e.g., "LFP" or "LFT").
+ * @param {string} game - Game key identifying which game configuration to use.
+ * @returns {ValidationResult} ValidationResult containing any errors (missing or overlong required fields, unknown game config) and warnings (unexpected fields).
  */
 function validateRequestContent(content, gameType, game) {
     const result = new ValidationResult();
@@ -193,10 +194,12 @@ function validateRequestContent(content, gameType, game) {
 }
 
 /**
- * Validate Discord message size limits
- * @param {string} content - Message content to validate
- * @param {Array} embeds - Array of embeds to validate
- * @returns {ValidationResult} - Validation result
+ * Validate a message's content and embeds against Discord size and embed limits.
+ *
+ * Checks content length, total embed count, per-embed field limits, and an approximate overall message size.
+ * @param {string} content - Message content to validate (defaults to empty string).
+ * @param {Array} embeds - Array of embed-like objects to validate; each embed is expected to have a `data` object with title, description, footer, and fields.
+ * @returns {ValidationResult} ValidationResult containing errors for any hard limit violations (e.g., content > 2000 chars, more than 10 embeds, per-embed limit breaches) and warnings for non-fatal issues (e.g., large total message size that may be truncated or embed-level warnings).
  */
 function validateMessageLimits(content = "", embeds = []) {
     const result = new ValidationResult();
@@ -240,9 +243,14 @@ function validateMessageLimits(content = "", embeds = []) {
 }
 
 /**
- * Validate embed field limits
- * @param {EmbedBuilder} embed - Embed to validate
- * @returns {ValidationResult} - Validation result
+ * Validate a Discord embed's fields and size against Discord's limits.
+ *
+ * Checks the embed's title, description, footer text, author name, field count,
+ * and each field's name and value for violations of Discord constraints:
+ * title ≤ 256, description ≤ 4096, footer text ≤ 2048, author name ≤ 256,
+ * max 25 fields, field name ≤ 256, field value ≤ 1024.
+ * @param {EmbedBuilder} embed - EmbedBuilder whose `data` will be validated.
+ * @returns {ValidationResult} ValidationResult containing errors for each violated embed limit; empty if the embed conforms to all limits.
  */
 function validateEmbedLimits(embed) {
     const result = new ValidationResult();
@@ -293,11 +301,12 @@ function validateEmbedLimits(embed) {
 }
 
 /**
- * Validate channel existence and permissions
- * @param {Object} guild - Discord guild object
- * @param {string} channelId - Channel ID to validate
- * @param {Array} requiredPermissions - Required permissions for bot
- * @returns {ValidationResult} - Validation result
+ * Verify that a channel exists in the specified guild and that the bot has the required permissions there.
+ *
+ * @param {Object} guild - Discord Guild object to check against.
+ * @param {string} channelId - ID of the channel to validate.
+ * @param {Array<string>} [requiredPermissions=['ViewChannel','SendMessages']] - Permissions the bot must have in the channel.
+ * @returns {ValidationResult} ValidationResult containing errors for missing guild, invalid or missing channel, missing bot member, or any lacking permissions; valid if no issues were found.
  */
 async function validateChannelAccess(guild, channelId, requiredPermissions = ['ViewChannel', 'SendMessages']) {
     const result = new ValidationResult();
@@ -341,10 +350,15 @@ async function validateChannelAccess(guild, channelId, requiredPermissions = ['V
 }
 
 /**
- * Validate user existence in guild
- * @param {Object} guild - Discord guild object
- * @param {string} userId - User ID to validate
- * @returns {ValidationResult} - Validation result
+ * Check whether a user ID corresponds to a member of the given guild.
+ *
+ * @param {Object} guild - Discord guild object to search for the member.
+ * @param {string} userId - Discord user ID to validate and look up.
+ * @returns {ValidationResult} Validation result containing errors when:
+ *  - the guild is not provided,
+ *  - the userId is invalid,
+ *  - the user is not found in the guild,
+ *  - or an error occurred while fetching the member (error message included).
  */
 async function validateUserInGuild(guild, userId) {
     const result = new ValidationResult();
@@ -376,8 +390,11 @@ async function validateUserInGuild(guild, userId) {
 }
 
 /**
- * Validate configuration completeness
- * @returns {ValidationResult} - Validation result
+ * Validate system configuration and report missing, invalid, or inconsistent settings.
+ *
+ * Performs checks for required IDs, numeric constraints, and related date relationships;
+ * adds errors for missing or invalid critical configuration values and warnings for non-fatal inconsistencies.
+ * @returns {ValidationResult} Validation result containing any errors and warnings found.
  */
 function validateSystemConfig() {
     const result = new ValidationResult();
@@ -422,9 +439,9 @@ function validateSystemConfig() {
 }
 
 /**
- * Sanitize user input to prevent XSS
- * @param {string} input - Input to sanitize
- * @returns {string} - Sanitized input
+ * Remove potentially dangerous markup and common Markdown/Discord formatting from a user-provided string.
+ * @param {string} input - The string to clean; if not a string or empty, an empty string is returned.
+ * @returns {string} The cleaned string with HTML angle brackets, code blocks, inline code, and common Markdown/Discord formatting removed.
  */
 function sanitizeInput(input) {
     if (!input || typeof input !== 'string') return '';
@@ -443,12 +460,11 @@ function sanitizeInput(input) {
 }
 
 /**
- * Validate and sanitize request content
- * @param {Object} content - Request content
- * @param {string} gameType - LFP or LFT
- * @param {string} game - Game key
- * @returns {Object} - Sanitized content and validation result
- */
+ * Validate request content against the game's configuration and return sanitized string fields when validation passes.
+ * @param {Object} content - The request payload to validate and sanitize.
+ * @param {string} gameType - The submission type, e.g., "LFP" (looking for players) or "LFT" (looking for team).
+ * @param {string} game - The game key used to resolve the game's configuration.
+ * @returns {{content: Object|null, validationResult: ValidationResult}} An object containing `content` (sanitized copy of the input when valid, otherwise `null`) and the `validationResult` describing errors or warnings. */
 function validateAndSanitizeContent(content, gameType, game) {
     const validationResult = validateRequestContent(content, gameType, game);
     

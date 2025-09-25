@@ -241,10 +241,6 @@ flowchart TD
     F --> G[User Fills Fields]
     G --> H[Content Extracted]
     H --> I[Request Saved]
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style F fill:#e8f5e8
 ```
 
 ---
@@ -602,10 +598,6 @@ flowchart TD
     E -- Yes --> G[Recover Message]
     G --> H[Notify User]
     G --> I[Log Recovery Action]
-    
-    style A fill:#ff6b6b
-    style G fill:#51cf66
-    style H fill:#339af0
 ```
 
 ---

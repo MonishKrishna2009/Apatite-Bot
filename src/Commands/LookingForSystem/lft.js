@@ -35,6 +35,8 @@ const { getGameChannels } = require("../../Structure/Functions/LFSystem/lfAction
 const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
 const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 const config = require("../../Structure/Configs/config");
+const { Logger } = require("../../Structure/Functions/Logger");
+const logger = new Logger();
 
 class LFTSys extends Command {
     constructor(client) {
@@ -95,7 +97,7 @@ class LFTSys extends Command {
                     break;
             }
         } catch (error) {
-            console.error(`LFT command error: ${error.stack}`);
+            logger.error(`LFT command error: ${error.stack}`);
             return interaction.reply({
                 embeds: [createErrorEmbed("Error", "An error occurred while processing your request.")],
                 flags: MessageFlags.Ephemeral
@@ -109,11 +111,6 @@ class LFTSys extends Command {
         // Get game-specific channels
         const channels = getGameChannels(config, game);
         
-        // Cleanup old requests
-        await cleanupRequests(interaction.guild, interaction.user.id, "LFT", channels.publicChannelId, config);
-        
-        // Check active request limit
-        if (await checkActiveRequests(interaction, "LFT", config)) return;
 
         // Create modal based on game using modal handler
         const modal = modalHandler.createCreateModal("lft", game);

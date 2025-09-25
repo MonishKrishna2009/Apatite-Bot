@@ -53,6 +53,27 @@ module.exports = {
     MaxActiveRequest: 5,
     RequestExpiryDays: 7,
     RequestArchiveDays: 30,
+    RequestDeleteDays: 60, // Days after which soft-deleted requests (archived, expired, cancelled) are permanently deleted
+    
+    // Rate Limiting Configurations
+    rateLimits: {
+        create: {
+            maxRequests: 3,
+            windowMs: 300000 // 5 minutes
+        },
+        edit: {
+            maxRequests: 5,
+            windowMs: 60000 // 1 minute
+        },
+        cancel: {
+            maxRequests: 10,
+            windowMs: 300000 // 5 minutes
+        },
+        default: {
+            maxRequests: 5,
+            windowMs: 300000 // 5 minutes
+        }
+    },
 
 
     // Bot admins and developers
@@ -65,7 +86,7 @@ module.exports = {
     devGuilds: [
         {
           name: "Apatite",
-          id: "1040507183080685658",
+          id: "1420309277699997738",
         },
       ],
 }

@@ -49,6 +49,7 @@ const {
   getRequestPreview,
   softDeleteRequest
 } = require("../../Structure/Functions/LFSystem/lfHelpers");
+const { validateUserInGuild } = require("../../Structure/Functions/LFSystem/lfValidation");
 const { logLFAction, getGameChannels } = require("../../Structure/Functions/LFSystem/lfActionLogger");
 
 class RequestsCommand extends Command {
@@ -101,6 +102,17 @@ class RequestsCommand extends Command {
 
   async execute(interaction, client) {
     const sub = interaction.options.getSubcommand();
+
+    // Validate user is still in guild for non-list operations
+    if (sub !== "list") {
+      const userValidation = await validateUserInGuild(interaction.guild, interaction.user.id);
+      if (!userValidation.isValid) {
+        return interaction.reply({
+          embeds: [createErrorEmbed("User Validation Error", userValidation.errors.join("\n"))],
+          flags: MessageFlags.Ephemeral
+        });
+      }
+    }
 
     const id = interaction.options.getString("request_id");
     // ✅ Validate ID before DB call
@@ -233,11 +245,19 @@ class RequestsCommand extends Command {
           // Get game-specific channels
           const channels = getGameChannels(config, req.game);
 
+          // Clear message IDs BEFORE deleting to prevent recovery system from interfering
+          const oldMessageId = req.messageId;
+          const oldPublicMessageId = req.publicMessageId;
+          req.messageId = null;
+          req.publicMessageId = null;
+          req.status = STATUS.CANCELLED;
+          await req.save();
+
           // Try deleting review message
-          if (req.messageId) {
+          if (oldMessageId) {
             try {
               const ch = await client.channels.fetch(channels.reviewChannelId);
-              const m = await ch.messages.fetch(req.messageId).catch(() => null);
+              const m = await ch.messages.fetch(oldMessageId).catch(() => null);
               if (m) await m.delete();
               triedDeletes.push("review message");
             } catch (error) {
@@ -246,22 +266,16 @@ class RequestsCommand extends Command {
           }
 
           // Try deleting public message
-          if (req.publicMessageId) {
+          if (oldPublicMessageId) {
             try {
               const ch = await client.channels.fetch(channels.publicChannelId);
-              const m = await ch.messages.fetch(req.publicMessageId).catch(() => null);
+              const m = await ch.messages.fetch(oldPublicMessageId).catch(() => null);
               if (m) await m.delete();
               triedDeletes.push("public message");
             } catch (error) {
               logger.warn(`Failed to delete public message for request ${req._id}: ${error.message}`);
             }
           }
-
-          // Mark as cancelled
-          req.status = STATUS.CANCELLED;
-          req.messageId = null;
-          req.publicMessageId = null;
-          await req.save();
 
           // Log the action
           await logLFAction(client, config, 'cancel', req, interaction.user);
@@ -324,6 +338,7 @@ class RequestsCommand extends Command {
 
         // Continue with resend operations after reply
         try {
+          // Clear message IDs BEFORE creating new ones to prevent recovery system interference
           req.status = STATUS.PENDING;
           req.reviewedBy = null;
           req.messageId = null;

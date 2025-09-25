@@ -1,7 +1,7 @@
 {
   "valorant": {
-    "reviewChannel": "1416469279855087949",
-    "publicChannel": "1402824817970774016",
+    "reviewChannel": "1420309481446838314",
+    "publicChannel": "1420309503462739968",
     "displayName": "Valorant",
     "fields": [
       {
@@ -42,100 +42,6 @@
         "style": "PARAGRAPH",
         "required": false,
         "placeholder": "Availability, languages, scrim times, etc... (optional)",
-        "maxLength": 3000
-      }
-    ]
-  },
-  "cs2": {
-    "reviewChannel": "1419818807731683339",
-    "publicChannel": "1419819135336054856",
-    "displayName": "Counter-Strike 2",
-    "fields": [
-      {
-        "id": "steamID",
-        "label": "Steam ID",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., Apatite",
-        "maxLength": 100
-      },
-      {
-        "id": "rolesPlayed",
-        "label": "Roles Played",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., AWPer, IGL, Entry, etc...",
-        "maxLength": 100
-      },
-      {
-        "id": "peakRank",
-        "label": "Peak/Current Rank",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., Global Elite",
-        "maxLength": 100
-      },
-      {
-        "id": "recentTeams",
-        "label": "Recent Teams",
-        "style": "PARAGRAPH",
-        "required": false,
-        "placeholder": "e.g., Apatite Weekly scrims (optional)",
-        "maxLength": 300
-      },
-      {
-        "id": "additionalInfo",
-        "label": "Details",
-        "style": "PARAGRAPH",
-        "required": false,
-        "placeholder": "Availability, languages, experience, etc... (optional)",
-        "maxLength": 3000
-      }
-    ]
-  },
-  "lol": {
-    "reviewChannel": "1419818844993749052",
-    "publicChannel": "1419819148002983947",
-    "displayName": "League of Legends",
-    "fields": [
-      {
-        "id": "summonerName",
-        "label": "Summoner Name",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., Apatite",
-        "maxLength": 100
-      },
-      {
-        "id": "rolesPlayed",
-        "label": "Roles Played",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., Top, Jungle, Mid, ADC, Support",
-        "maxLength": 100
-      },
-      {
-        "id": "peakRank",
-        "label": "Peak/Current Rank",
-        "style": "SHORT",
-        "required": true,
-        "placeholder": "e.g., Challenger",
-        "maxLength": 100
-      },
-      {
-        "id": "recentTeams",
-        "label": "Recent Teams",
-        "style": "PARAGRAPH",
-        "required": false,
-        "placeholder": "e.g., Apatite Weekly scrims (optional)",
-        "maxLength": 300
-      },
-      {
-        "id": "additionalInfo",
-        "label": "Details",
-        "style": "PARAGRAPH",
-        "required": false,
-        "placeholder": "Availability, languages, experience, etc... (optional)",
         "maxLength": 3000
       }
     ]

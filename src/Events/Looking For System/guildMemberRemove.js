@@ -68,6 +68,8 @@ class LFUpdate extends Event {
                     // Soft delete DB entry instead of hard delete
                     req.status = 'deleted';
                     req.deletedAt = new Date();
+                    req.messageId = null;
+                    req.publicMessageId = null;
                     await req.save();
                 } catch (err) {
                     logger.error(`Cleanup failed for request ${req._id} of user ${userId}: ${err.message}`);

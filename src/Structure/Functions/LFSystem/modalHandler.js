@@ -47,7 +47,7 @@ class ModalHandler {
             const configData = fs.readFileSync(configPath, "utf8");
             return JSON.parse(configData);
         } catch (error) {
-            console.error(`Failed to load config ${filename}:`, error.message);
+            // Return empty config if file doesn't exist or is invalid
             return {};
         }
     }
@@ -63,6 +63,74 @@ class ModalHandler {
             name: config[gameKey].displayName,
             value: gameKey
         }));
+    }
+
+    /**
+     * Get all games including legacy ones from database
+     * @param {string} requestType - "lfp" or "lft" or "all"
+     * @param {Object} guildId - Guild ID to check for legacy games
+     * @returns {Array} - Array of game choices including legacy games
+     */
+    async getGameChoicesWithLegacy(requestType, guildId) {
+        const LFRequest = require("../../Schemas/LookingFor/lfplft");
+        
+        // Start with active games from configuration files
+        const activeGames = new Map();
+        
+        // Add LFP games if requested (or if "all" is specified)
+        if (requestType === "lfp" || requestType === "all") {
+            Object.keys(this.lfpConfig).forEach(gameKey => {
+                activeGames.set(gameKey, {
+                    name: this.lfpConfig[gameKey].displayName, // User-friendly display name
+                    value: gameKey, // Canonical key for database lookups
+                    isActive: true // Indicates this game is currently supported
+                });
+            });
+        }
+        
+        // Add LFT games if requested (or if "all" is specified)
+        if (requestType === "lft" || requestType === "all") {
+            Object.keys(this.lftConfig).forEach(gameKey => {
+                activeGames.set(gameKey, {
+                    name: this.lftConfig[gameKey].displayName, // User-friendly display name
+                    value: gameKey, // Canonical key for database lookups
+                    isActive: true // Indicates this game is currently supported
+                });
+            });
+        }
+
+        // Now find legacy games that exist in database but not in current config
+        try {
+            // Build query filter - only get games for the specific request type
+            const queryFilter = { guildId };
+            if (requestType !== "all") {
+                queryFilter.type = requestType.toUpperCase(); // Convert "lfp"/"lft" to "LFP"/"LFT"
+            }
+            
+            // Get all unique game keys from database for this guild/type
+            const legacyGames = await LFRequest.distinct("game", queryFilter);
+            
+            // Add legacy games that aren't already in our active games list
+            legacyGames.forEach(gameKey => {
+                if (!activeGames.has(gameKey)) {
+                    // This game exists in database but not in current config (legacy game)
+                    activeGames.set(gameKey, {
+                        name: gameKey.charAt(0).toUpperCase() + gameKey.slice(1), // Capitalize for display
+                        value: gameKey, // Keep original key for database consistency
+                        isActive: false // Mark as legacy/inactive
+                    });
+                }
+            });
+        } catch (error) {
+            // Silently fail if legacy games can't be fetched - don't break the flow
+        }
+
+        return Array.from(activeGames.values()).sort((a, b) => {
+            // Active games first, then legacy games
+            if (a.isActive && !b.isActive) return -1;
+            if (!a.isActive && b.isActive) return 1;
+            return a.name.localeCompare(b.name);
+        });
     }
 
     /**
@@ -85,7 +153,6 @@ class ModalHandler {
     createCreateModal(requestType, game) {
         const gameConfig = this.getGameConfig(requestType, game);
         if (!gameConfig) {
-            console.error(`Game config not found for ${requestType}/${game}`);
             return null;
         }
 
@@ -124,7 +191,6 @@ class ModalHandler {
     createEditModal(requestType, request) {
         const gameConfig = this.getGameConfig(requestType, request.game.toLowerCase());
         if (!gameConfig) {
-            console.error(`Game config not found for ${requestType}/${request.game}`);
             return null;
         }
 
@@ -170,7 +236,6 @@ class ModalHandler {
             case "PARAGRAPH":
                 return TextInputStyle.Paragraph;
             default:
-                console.warn(`Unknown text input style: ${style}, defaulting to Short`);
                 return TextInputStyle.Short;
         }
     }
@@ -185,7 +250,6 @@ class ModalHandler {
     extractContent(interaction, requestType, game) {
         const gameConfig = this.getGameConfig(requestType, game);
         if (!gameConfig) {
-            console.error(`Game config not found for ${requestType}/${game}`);
             return {};
         }
 
@@ -194,7 +258,6 @@ class ModalHandler {
             try {
                 content[field.id] = interaction.fields.getTextInputValue(field.id);
             } catch (error) {
-                console.warn(`Failed to get field ${field.id}:`, error.message);
                 content[field.id] = "";
             }
         });
@@ -230,7 +293,6 @@ class ModalHandler {
     reloadConfigs() {
         this.lfpConfig = this.loadConfig("lfp.json");
         this.lftConfig = this.loadConfig("lft.json");
-        console.log("Modal configurations reloaded");
     }
 
     /**
@@ -258,14 +320,12 @@ class ModalHandler {
         const requiredProps = ["displayName", "fields"];
         for (const prop of requiredProps) {
             if (!gameConfig[prop]) {
-                console.error(`Missing required property '${prop}' in ${requestType}/${game} config`);
                 return false;
             }
         }
 
         // Validate fields
         if (!Array.isArray(gameConfig.fields) || gameConfig.fields.length === 0) {
-            console.error(`Invalid fields array in ${requestType}/${game} config`);
             return false;
         }
 
@@ -274,7 +334,6 @@ class ModalHandler {
             const requiredFieldProps = ["id", "label", "style"];
             for (const prop of requiredFieldProps) {
                 if (!field[prop]) {
-                    console.error(`Missing required field property '${prop}' in ${requestType}/${game} config`);
                     return false;
                 }
             }

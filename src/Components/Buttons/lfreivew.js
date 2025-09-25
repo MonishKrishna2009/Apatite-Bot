@@ -51,6 +51,12 @@ class LFReviewHandler extends Component {
 
         req.status = action === "approve" ? "approved" : "declined";
         req.reviewedBy = interaction.user.id;
+        
+        // Clear message ID if declined to prevent accidental recovery
+        if (action === "decline") {
+            req.messageId = null;
+        }
+        
         await req.save();
 
         // Get game-specific channels

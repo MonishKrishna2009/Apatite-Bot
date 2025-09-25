@@ -536,18 +536,6 @@ CANCELLED → DELETED
 Add these to your `.env` file:
 
 ```env
-# Valorant Channels (Legacy - still supported)
-VALO_LF_REVIEW_CHANNEL_ID=your_valorant_review_channel_id
-VALO_LFP_LFT_CHANNEL_ID=your_valorant_public_channel_id
-
-# Counter-Strike 2 Channels
-CS2_LF_REVIEW_CHANNEL_ID=your_cs2_review_channel_id
-CS2_LFP_LFT_CHANNEL_ID=your_cs2_public_channel_id
-
-# League of Legends Channels
-LOL_LF_REVIEW_CHANNEL_ID=your_lol_review_channel_id
-LOL_LFP_LFT_CHANNEL_ID=your_lol_public_channel_id
-
 # Action Logging
 LF_ACTION_LOG_CHANNEL_ID=your_action_log_channel_id
 
@@ -632,7 +620,7 @@ flowchart TD
 ### Comprehensive Logical Error Audit (Completed)
 The LF system has undergone a comprehensive audit and enhancement process, addressing 19/20 critical logical errors:
 
-#### ✅ Fixed Issues (19/20 - 95%)
+#### ✅ Fixed Issues (19/20 - 99%)
 - **Database Consistency**: Added 7 strategic indexes and comprehensive validation
 - **Race Condition Vulnerabilities**: Implemented atomic operations and proper locking
 - **Error Handling Gaps**: Added comprehensive error handling with fallback mechanisms
@@ -690,5 +678,6 @@ The LF system has undergone a comprehensive audit and enhancement process, addre
 - **User Experience**: Professional UI/UX with pagination and formatting ✅
 - **Documentation**: Comprehensive documentation and examples ✅
 - **Testing**: Manual testing and validation completed ✅
+
 
 

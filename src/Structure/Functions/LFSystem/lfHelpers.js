@@ -48,10 +48,12 @@ const ALLOWED_TRANSITIONS = {
 };
 
 /**
- * Check if a status transition is allowed
- * @param {string} fromStatus - Current status
- * @param {string} toStatus - Target status
- * @returns {boolean} - Whether transition is allowed
+ * Determine whether a transition from one status to another is permitted.
+ *
+ * Checks the configured allowed transitions and returns `false` if either input is falsy.
+ * @param {string} fromStatus - Current status (one of the defined STATUS values).
+ * @param {string} toStatus - Desired target status (one of the defined STATUS values).
+ * @returns {boolean} `true` if the transition from `fromStatus` to `toStatus` is allowed, `false` otherwise.
  */
 function isStatusTransitionAllowed(fromStatus, toStatus) {
     if (!fromStatus || !toStatus) return false;
@@ -59,18 +61,18 @@ function isStatusTransitionAllowed(fromStatus, toStatus) {
 }
 
 /**
- * Validate if a status is valid
- * @param {string} status - Status to validate
- * @returns {boolean} - Whether status is valid
+ * Check whether a status string is one of the defined STATUS values.
+ * @param {string} status - The status string to check (must match a value in `STATUS`).
+ * @returns {boolean} `true` if `status` matches one of the defined `STATUS` values, `false` otherwise.
  */
 function isValidStatus(status) {
     return Object.values(STATUS).includes(status);
 }
 
 /**
- * Normalize status to lowercase for consistency
- * @param {string} status - Status to normalize
- * @returns {string} - Normalized status
+ * Normalize a status string to lowercase.
+ * @param {string} status - The status string to normalize.
+ * @returns {string|null} The lowercase status string, or `null` if the input is falsy.
  */
 function normalizeStatus(status) {
     if (!status) return null;
@@ -78,18 +80,18 @@ function normalizeStatus(status) {
 }
 
 /**
- * Check if a status represents an active request
- * @param {string} status - Status to check
- * @returns {boolean} - Whether status is active
+ * Determine whether the given status is considered active.
+ * @param {string} status - Status value to evaluate (case-insensitive).
+ * @returns {boolean} `true` if the status is pending or approved, `false` otherwise.
  */
 function isActiveStatus(status) {
     return [STATUS.PENDING, STATUS.APPROVED].includes(normalizeStatus(status));
 }
 
 /**
- * Check if a status represents a soft-deleted request
- * @param {string} status - Status to check
- * @returns {boolean} - Whether status is soft-deleted
+ * Determines whether a status is considered soft-deleted.
+ * @param {string} status - Status to check.
+ * @returns {boolean} `true` if the status is one of declined, archived, expired, or cancelled; `false` otherwise.
  */
 function isSoftDeletedStatus(status) {
     return [STATUS.DECLINED, STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED].includes(normalizeStatus(status));
@@ -297,9 +299,12 @@ async function softDeleteRequest(requestId, guildId) {
 }
 
 /**
- * Get request preview text for lists
- * @param {Object} request - LFRequest document
- * @returns {string} - Formatted preview text
+ * Build a compact, human-readable preview string for a request suitable for lists.
+ *
+ * The preview includes the request type, game, status (with emoji), relative creation time,
+ * a primary content field (teamName, riotID, lookingFor, or the first content value), and the request ID.
+ * @param {Object} request - LFRequest-like document containing at least `type`, `game`, `status`, `createdAt`, `content`, and `_id`.
+ * @returns {string} Formatted single-string preview for display in lists.
  */
 function getRequestPreview(request) {
     const createdAt = Math.floor(new Date(request.createdAt).getTime() / 1000);
@@ -315,13 +320,18 @@ function getRequestPreview(request) {
 }
 
 /**
- * Clean up expired and archived requests for a user/game type
- * @param {Object} guild - Discord guild object
- * @param {String|null} userId - User ID (null for global cleanup)
- * @param {String} type - Request type (e.g., "LFP" or "LFT")
- * @param {String} publicChannelId - Channel ID where public embeds are posted (legacy parameter, will use game-specific channels)
- * @param {Object} config - Config object with RequestExpiryDays & RequestArchiveDays
- * @returns {Object} - Cleanup results
+ * Perform expiration and archival cleanup of LookingFor requests for a guild and optional user.
+ *
+ * Expires pending requests whose `expiresAt` is before now, and archives approved requests older than `config.RequestArchiveDays`. When archiving, attempts to delete the request's public message (if any), sets status to `ARCHIVED`, records `archivedAt`, and clears `publicMessageId`.
+ * @param {Object} guild - Discord guild object whose requests will be cleaned.
+ * @param {string|null} userId - If provided, restrict cleanup to this user's requests; pass `null` to operate on all users.
+ * @param {string} type - Request type to target (e.g., `"LFP"` or `"LFT"`).
+ * @param {string} publicChannelId - Legacy channel ID parameter (not used for game-specific channel resolution).
+ * @param {Object} config - Configuration containing `RequestArchiveDays` (days before approved requests are archived). `RequestExpiryDays` is available in config but expiration uses each request's `expiresAt`.
+ * @returns {Object} Results of the operation containing:
+ *  - `{number} expired` — count of requests transitioned to `EXPIRED`.
+ *  - `{number} archived` — count of requests transitioned to `ARCHIVED`.
+ *  - `{string[]} errors` — list of error messages encountered during cleanup.
  */
 async function cleanupRequests(guild, userId, type, publicChannelId, config) {
     const results = {
@@ -428,9 +438,9 @@ async function cleanupRequests(guild, userId, type, publicChannelId, config) {
 }
 
 /**
- * Global cleanup function that can be run on interval
- * @param {Object} client - Discord client
- * @param {Object} config - Configuration object
+ * Run cleanup across all guilds to expire and archive LookingFor requests, aggregating results.
+ *
+ * @returns {{totalExpired: number, totalArchived: number, errors: string[]}} Totals of expired and archived requests and collected error messages.
  */
 async function globalCleanup(client, config) {
     const results = {

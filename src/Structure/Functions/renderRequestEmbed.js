@@ -21,9 +21,10 @@ const { EmbedBuilder, Colors } = require("discord.js");
 const modalHandler = require("./LFSystem/modalHandler");
 
 /**
- * Get status-based color and emoji
- * @param {string} status - Request status
- * @returns {Object} - { color, emoji }
+ * Map a request status string to a display color and emoji.
+ *
+ * @param {string} status - Status identifier (case-insensitive).
+ * @returns {{color: import('discord.js').ColorResolvable, emoji: string}} An object containing `color` and `emoji` for the given status; returns a default gray color and `"❓"` emoji for unknown statuses.
  */
 function getStatusInfo(status) {
   const statusInfo = {
@@ -40,9 +41,16 @@ function getStatusInfo(status) {
 }
 
 /**
- * Get game-specific color and emoji
- * @param {string} game - Game name
- * @returns {Object} - { color, emoji, displayName }
+ * Resolve display metadata (color, emoji, and human-readable name) for a given game identifier.
+ *
+ * Looks up known games by case-insensitive key and, if unknown, attempts to read game configuration
+ * from the modalHandler; falls back to a default blue color, generic game emoji, and a capitalized
+ * form of the provided game name when configuration is absent or on error.
+ * @param {string} game - Game identifier or name (case-insensitive) to resolve.
+ * @returns {{color:number, emoji:string, displayName:string}} Object containing:
+ *   - color: numeric Discord embed color,
+ *   - emoji: short string emoji representing the game,
+ *   - displayName: human-readable game name.
  */
 function getGameInfo(game) {
   const gameInfo = {
@@ -80,10 +88,10 @@ function getGameInfo(game) {
 }
 
 /**
- * Format field value for display
- * @param {any} value - Field value
- * @param {number} maxLength - Maximum length for truncation
- * @returns {string} - Formatted value
+ * Normalize a field value for display, returning "Not specified" for empty values and truncating long strings with an ellipsis.
+ * @param {any} value - The value to format; will be converted to a trimmed string.
+ * @param {number} [maxLength=1000] - Maximum allowed length of the returned string; longer values are truncated and end with "...".
+ * @returns {string} The formatted string or `"Not specified"` if the input is empty or falsy.
  */
 function formatFieldValue(value, maxLength = 1000) {
   if (!value || value.toString().trim() === '') return "Not specified";
@@ -99,9 +107,12 @@ function formatFieldValue(value, maxLength = 1000) {
 }
 
 /**
- * Convert camelCase to readable format
- * @param {string} key - Field key
- * @returns {string} - Readable field name
+ * Format a camelCase or PascalCase identifier into a human-readable label.
+ *
+ * Inserts spaces before capital letters, capitalizes the first character,
+ * and normalizes common acronyms (`ID`, `URL`, `API`).
+ * @param {string} key - Identifier to format (e.g., "playerId" or "summonerName").
+ * @returns {string} The formatted label (e.g., "Player ID", "Summoner Name").
  */
 function formatFieldName(key) {
   return key
@@ -113,10 +124,10 @@ function formatFieldName(key) {
 }
 
 /**
- * Renders an embed for a Looking For Player / Team request
- * @param {Object} req - LFRequest mongoose document
- * @param {User} user - Discord.js User object of the request creator
- * @returns {EmbedBuilder}
+ * Renders an embed summarizing a Looking For Player/Team request for display in Discord.
+ * @param {Object} req - LFRequest mongoose document containing fields like type, status, game, content, createdAt, expiresAt, reviewedBy, updatedAt, userId, and _id.
+ * @param {import('discord.js').User} [user] - Discord user object of the request creator; used for avatar/thumbnail if provided.
+ * @returns {EmbedBuilder} The constructed EmbedBuilder representing the request.
  */
 function renderRequestEmbed(req, user) {
   const statusInfo = getStatusInfo(req.status);

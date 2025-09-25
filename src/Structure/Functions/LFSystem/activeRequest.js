@@ -23,11 +23,11 @@ const { Logger } = require("../Logger");
 const logger = new Logger();
 
 /**
- * Checks if a user has exceeded the max active requests.
- * @param {Object} interaction - Discord interaction
- * @param {String} type - Request type ("LFP" or "LFT")
- * @param {Object} config - Config with MaxActiveRequest
- * @returns {Boolean} true if limit reached, false otherwise
+ * Determine whether the user has reached the maximum number of active requests of the given type.
+ * @param {Object} interaction - The Discord interaction containing user and guild context.
+ * @param {String} type - Request type, e.g., "LFP" or "LFT".
+ * @param {Object} config - Configuration object containing `MaxActiveRequest`.
+ * @returns {Boolean} `true` if the user has reached or exceeded the configured maximum active requests for the type, `false` otherwise.
  */
 async function checkActiveRequests(interaction, type, config) {
     const { user, guild } = interaction;
@@ -71,12 +71,16 @@ async function checkActiveRequests(interaction, type, config) {
 }
 
 /**
- * Atomic check and reserve a request slot to prevent race conditions
- * Uses MongoDB's findOneAndUpdate with upsert for true atomicity
- * @param {Object} interaction - Discord interaction
- * @param {String} type - Request type ("LFP" or "LFT")
- * @param {Object} config - Config with MaxActiveRequest
- * @returns {Boolean} true if slot reserved, false if limit reached
+ * Reserve an available request slot atomically to prevent a user from exceeding the per-guild request limit.
+ *
+ * If the per-user limit would be exceeded, the reservation is rolled back and an ephemeral reply is sent to the interaction.
+ * On error the function sends an ephemeral error reply and returns `false`.
+ *
+ * @param {Object} interaction - The Discord interaction containing `user` and `guild`.
+ * @param {string} type - Request type, e.g., "LFP" or "LFT".
+ * @param {Object} config - Configuration object.
+ * @param {number} config.MaxActiveRequest - Maximum allowed active requests per user for the given type.
+ * @returns {boolean} `true` if a slot was successfully reserved, `false` if the limit was reached or an error occurred.
  */
 async function reserveRequestSlot(interaction, type, config) {
     const { user, guild } = interaction;
@@ -141,10 +145,10 @@ async function reserveRequestSlot(interaction, type, config) {
 }
 
 /**
- * Release a reserved slot after successful request creation or on failure
- * @param {Object} interaction - Discord interaction
- * @param {String} type - Request type ("LFP" or "LFT")
- * @returns {Boolean} true if slot released successfully
+ * Release a previously reserved request slot for the invoking user in the interaction's guild.
+ * @param {Object} interaction - Discord interaction containing the user and guild.
+ * @param {string} type - Request type, either "LFP" or "LFT".
+ * @returns {boolean} `true` if the reservation was released or cleaned up successfully, `false` otherwise.
  */
 async function releaseReservation(interaction, type) {
     const { user, guild } = interaction;
@@ -171,9 +175,9 @@ async function releaseReservation(interaction, type) {
 }
 
 /**
- * Clean up expired reservations (should be called periodically)
- * @param {String} guildId - Optional guild ID to limit cleanup scope
- * @returns {Number} Number of expired reservations cleaned up
+ * Remove reservation records whose expiration time is before now, optionally scoped to a specific guild.
+ * @param {string|null} guildId - Optional guild ID to limit cleanup to that guild.
+ * @returns {number} The number of deleted reservation documents.
  */
 async function cleanupExpiredReservations(guildId = null) {
     try {

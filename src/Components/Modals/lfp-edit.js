@@ -71,18 +71,8 @@ class LFPEditModal extends Component {
 
     // If request is approved, we need to delete public message and resend to review
     if (req.status === STATUS.APPROVED) {
-      // Delete public message if it exists
-      if (req.publicMessageId) {
-        try {
-          const publicChannel = guild.channels.cache.get(channels.publicChannelId);
-          const publicMsg = await publicChannel.messages.fetch(req.publicMessageId).catch(() => null);
-          if (publicMsg) await publicMsg.delete();
-        } catch (error) {
-          logger.warn(`Failed to delete public message for request ${req._id}: ${error.message}`);
-        }
-      }
-
-      // Reset request to pending and extend expiry
+      // Clear message IDs BEFORE deleting to prevent recovery system from interfering
+      const oldPublicMessageId = req.publicMessageId;
       req.status = STATUS.PENDING;
       req.reviewedBy = null;
       req.publicMessageId = null;
@@ -92,6 +82,20 @@ class LFPEditModal extends Component {
       const newExpiresAt = new Date();
       newExpiresAt.setDate(newExpiresAt.getDate() + config.RequestExpiryDays);
       req.expiresAt = newExpiresAt;
+      
+      // Save changes before deleting messages
+      await req.save();
+
+      // Delete public message if it exists
+      if (oldPublicMessageId) {
+        try {
+          const publicChannel = guild.channels.cache.get(channels.publicChannelId);
+          const publicMsg = await publicChannel.messages.fetch(oldPublicMessageId).catch(() => null);
+          if (publicMsg) await publicMsg.delete();
+        } catch (error) {
+          logger.warn(`Failed to delete public message for request ${req._id}: ${error.message}`);
+        }
+      }
     }
 
     // Update request content

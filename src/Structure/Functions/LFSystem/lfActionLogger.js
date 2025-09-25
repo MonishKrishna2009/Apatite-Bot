@@ -54,7 +54,10 @@ async function logLFAction(client, config, action, request, user, staff = null, 
             'resend': Colors.Purple,
             'delete': Colors.DarkRed,
             'archive': Colors.Grey,
-            'expire': Colors.Yellow
+            'expire': Colors.Yellow,
+            'legacy_clean': Colors.Red,
+            'bulk_cleanup': Colors.Orange,
+            'system_action': Colors.Blue
         };
 
         const actionEmojis = {
@@ -66,14 +69,20 @@ async function logLFAction(client, config, action, request, user, staff = null, 
             'resend': '🔄',
             'delete': '🗑️',
             'archive': '📦',
-            'expire': '⏰'
+            'expire': '⏰',
+            'legacy_clean': '🧹',
+            'bulk_cleanup': '🧽',
+            'system_action': '⚙️'
         };
 
         const embed = new EmbedBuilder()
             .setTitle(`${actionEmojis[action] || '📋'} LF Action: ${action.toUpperCase()}`)
             .setColor(actionColors[action] || Colors.Grey)
-            .setTimestamp()
-            .setDescription(
+            .setTimestamp();
+
+        // Handle cases where request is null (e.g., bulk operations, system actions)
+        if (request) {
+            embed.setDescription(
                 `>>> **Request ID:** \`${request._id}\`\n` +
                 `**Type:** ${request.type}\n` +
                 `**Game:** ${request.game}\n` +
@@ -84,18 +93,27 @@ async function logLFAction(client, config, action, request, user, staff = null, 
                 (reason ? `\n**Reason:** ${reason}` : '')
             );
 
-        // Add request content preview
-        const contentPreview = Object.entries(request.content || {})
-            .slice(0, 3) // Show first 3 fields
-            .map(([key, value]) => `**${key}**: ${value}`)
-            .join('\n');
+            // Add request content preview
+            const contentPreview = Object.entries(request.content || {})
+                .slice(0, 3) // Show first 3 fields
+                .map(([key, value]) => `**${key}**: ${value}`)
+                .join('\n');
 
-        if (contentPreview) {
-            embed.addFields({ 
-                name: '📋 Request Details', 
-                value: `>>> ${contentPreview}`, 
-                inline: false 
-            });
+            if (contentPreview) {
+                embed.addFields({ 
+                    name: '📋 Request Details', 
+                    value: `>>> ${contentPreview}`, 
+                    inline: false 
+                });
+            }
+        } else {
+            // For actions without specific request (bulk operations, system actions)
+            embed.setDescription(
+                `>>> **Action:** ${action.toUpperCase()}\n` +
+                `**User:** <@${user.id}> (${user.tag})\n` +
+                (staff ? `**Staff Member:** <@${staff.id}> (${staff.tag})\n` : '') +
+                (reason ? `**Reason:** ${reason}` : '')
+            );
         }
 
         await logChannel.send({ embeds: [embed] });

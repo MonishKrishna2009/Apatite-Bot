@@ -5,9 +5,6 @@
 > This project is actively maintained and production-ready. The LFP/LFT system is fully implemented and stable.
 > Here is the [development roadmap](./GitAssets/docs/Development-roadmap.md) for this project!
 
-> [!CAUTION]
-> Most of the documentation for this project has been generated with the help of AI, as I don’t have much time to write it all manually. The docs have been reviewed for errors, but if you spot any issues, please open an issue or submit a pull request with a fix.
-
 A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.org) and MongoDB, designed for **ticketing, player/team matchmaking (LFP/LFT)**, comprehensive logging, and advanced moderation tools. Perfect for gaming communities, esports servers, and competitive Discord servers.
 
 ---
@@ -27,6 +24,9 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 
 ## ✨ Features 
+
+> [!CAUTION]
+> Most of the documentation for this project has been generated with the help of AI, as I don’t have much time to write it all manually. The docs have been reviewed for errors, but if you spot any issues, please open an issue or submit a pull request with a fix.
 
 - 👥 **LFP / LFT System** ✅
   - **Multi-game Support**: Valorant, CS2, League of Legends (easily extensible)

@@ -1,4 +1,10 @@
-# Apatite Bot
+# 🎮 Apatite Bot
+
+[![Discord.js](https://img.shields.io/badge/Discord.js-v14-blue?style=flat-square&logo=discord&logoColor=white)](https://discord.js.org) &nbsp;
+[![Bun](https://img.shields.io/badge/Bun-1.0+-green?style=flat-square&logo=bun&logoColor=white)](https://bun.sh) &nbsp;
+[![MongoDB](https://img.shields.io/badge/MongoDB-8.0%2B-blue?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com) &nbsp;
+[![GitHub license](https://img.shields.io/github/license/MonishKrishna2009/Apatite-Bot?style=flat-square)](https://github.com/MonishKrishna2009/Apatite-Bot/blob/main/LICENSE) &nbsp;
+
 ⚡ Discord bot for esports matchmaking, community management, and moderation.
 
 A Discord bot built with [discord.js v14](https://discord.js.org) and MongoDB, designed for ticketing, player/team matchmaking (LFP/LFT), logging, and moderation tools. Perfect for gaming communities and esports servers.

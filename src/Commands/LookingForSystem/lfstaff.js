@@ -339,7 +339,7 @@ class LFTStaff extends Command {
         }
 
         // Ensure guild ID is valid format
-        if (!/^\d{17,19}$/.test(interaction.guild.id)) {
+        if (!/^\d{17,20}$/.test(interaction.guild.id)) {
             return {
                 embeds: [createErrorEmbed("Error", "Invalid guild context.")],
                 flags: MessageFlags.Ephemeral
@@ -636,12 +636,82 @@ class LFTStaff extends Command {
             embed.addFields({ name: "Reviewed By", value: `<@${request.reviewedBy}> (Unknown)`, inline: true });
         }
 
+        // Add review message jump URL if channel exists
         if (request.messageId) {
-            embed.addFields({ name: "Review Message", value: `[Jump to Message](https://discord.com/channels/${request.guildId}/${getGameChannels(config, request.game).reviewChannelId}/${request.messageId})`, inline: true });
+            const channels = getGameChannels(config, request.game);
+            if (channels.reviewChannelId) {
+                try {
+                    // Check if channel exists in guild
+                    const channel = interaction.guild.channels.cache.get(channels.reviewChannelId) || 
+                                  await interaction.guild.channels.fetch(channels.reviewChannelId);
+                    
+                    if (channel) {
+                        embed.addFields({ 
+                            name: "Review Message", 
+                            value: `[Jump to Message](https://discord.com/channels/${request.guildId}/${channels.reviewChannelId}/${request.messageId})`, 
+                            inline: true 
+                        });
+                    } else {
+                        embed.addFields({ 
+                            name: "Review Message", 
+                            value: "Channel not found", 
+                            inline: true 
+                        });
+                    }
+                } catch (error) {
+                    logger.warn(`Failed to fetch review channel ${channels.reviewChannelId}: ${error.message}`);
+                    embed.addFields({ 
+                        name: "Review Message", 
+                        value: "Channel not found", 
+                        inline: true 
+                    });
+                }
+            } else {
+                embed.addFields({ 
+                    name: "Review Message", 
+                    value: "Channel not configured", 
+                    inline: true 
+                });
+            }
         }
 
+        // Add public message jump URL if channel exists
         if (request.publicMessageId) {
-            embed.addFields({ name: "Public Message", value: `[Jump to Message](https://discord.com/channels/${request.guildId}/${getGameChannels(config, request.game).publicChannelId}/${request.publicMessageId})`, inline: true });
+            const channels = getGameChannels(config, request.game);
+            if (channels.publicChannelId) {
+                try {
+                    // Check if channel exists in guild
+                    const channel = interaction.guild.channels.cache.get(channels.publicChannelId) || 
+                                  await interaction.guild.channels.fetch(channels.publicChannelId);
+                    
+                    if (channel) {
+                        embed.addFields({ 
+                            name: "Public Message", 
+                            value: `[Jump to Message](https://discord.com/channels/${request.guildId}/${channels.publicChannelId}/${request.publicMessageId})`, 
+                            inline: true 
+                        });
+                    } else {
+                        embed.addFields({ 
+                            name: "Public Message", 
+                            value: "Channel not found", 
+                            inline: true 
+                        });
+                    }
+                } catch (error) {
+                    logger.warn(`Failed to fetch public channel ${channels.publicChannelId}: ${error.message}`);
+                    embed.addFields({ 
+                        name: "Public Message", 
+                        value: "Channel not found", 
+                        inline: true 
+                    });
+                }
+            } else {
+                embed.addFields({ 
+                    name: "Public Message", 
+                    value: "Channel not configured", 
+                    inline: true 
+                });
+            }
         }
 
         // Add content details
@@ -716,9 +786,18 @@ class LFTStaff extends Command {
                 await this.handleArchiveAction(interaction, request, reason);
                 break;
             case "delete":
-                if (![STATUS.DECLINED, STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED, STATUS.DELETED].includes(request.status)) {
+                // Check if request is already deleted
+                if (request.status === STATUS.DELETED) {
                     return interaction.reply({
-                        embeds: [createErrorEmbed("Invalid Status", `This request is ${request.status}, only declined, archived, expired, cancelled, or deleted requests can be permanently deleted.`)],
+                        embeds: [createErrorEmbed("Already Deleted", `This request is already deleted and cannot be deleted again.`)],
+                        flags: MessageFlags.Ephemeral
+                    });
+                }
+                
+                // Only allow deletion of declined, archived, expired, or cancelled requests
+                if (![STATUS.DECLINED, STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED].includes(request.status)) {
+                    return interaction.reply({
+                        embeds: [createErrorEmbed("Invalid Status", `This request is ${request.status}, only declined, archived, expired, or cancelled requests can be permanently deleted.`)],
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -746,7 +825,8 @@ class LFTStaff extends Command {
                     const message = await reviewChannel.messages.fetch(request.messageId).catch(() => null);
                     if (message) {
                         const oldEmbed = message.embeds[0];
-                        const newEmbed = EmbedBuilder.from(oldEmbed)
+                        const newEmbed = oldEmbed ? EmbedBuilder.from(oldEmbed) : new EmbedBuilder();
+                        newEmbed
                             .setTitle(request.type === "LFP" ? "👥 LFP Request" : "🔎 LFT Request")
                             .setColor(Colors.Green)
                             .setFooter({ text: `Approved by ${interaction.user.tag} | Request ID: ${request._id}` });
@@ -840,7 +920,8 @@ class LFTStaff extends Command {
                     const message = await reviewChannel.messages.fetch(oldMessageId).catch(() => null);
                     if (message) {
                         const oldEmbed = message.embeds[0];
-                        const newEmbed = EmbedBuilder.from(oldEmbed)
+                        const newEmbed = oldEmbed ? EmbedBuilder.from(oldEmbed) : new EmbedBuilder();
+                        newEmbed
                             .setTitle(request.type === "LFP" ? "👥 LFP Request" : "🔎 LFT Request")
                             .setColor(Colors.Red)
                             .setFooter({ text: `Declined by ${interaction.user.tag} | Request ID: ${request._id}` });

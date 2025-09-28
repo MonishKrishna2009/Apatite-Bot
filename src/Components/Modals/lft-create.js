@@ -123,7 +123,7 @@ class LFTCreateModal extends Component {
         userId: user.id,
         guildId: guild.id,
         type: "LFT",
-        game: game, // Store canonical key (e.g., "valorant")
+        game: game.toLowerCase(), // Store canonical key (e.g., "valorant")
         status: STATUS.PENDING,
         createdAt: now,
         expiresAt: expiresAt,

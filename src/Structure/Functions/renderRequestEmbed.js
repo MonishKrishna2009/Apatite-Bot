@@ -37,7 +37,8 @@ function getStatusInfo(status) {
     deleted: { color: Colors.DarkRed, emoji: "🗑️" }
   };
   
-  return statusInfo[status.toLowerCase()] || { color: Colors.Grey, emoji: "❓" };
+  const key = typeof status === 'string' ? status.toLowerCase() : '';
+  return statusInfo[key] || { color: Colors.Grey, emoji: "❓" };
 }
 
 /**
@@ -64,14 +65,15 @@ function getGameInfo(game) {
     fortnite: { color: 0x00FF00, emoji: "🏗️", displayName: "Fortnite" }
   };
   
-  const info = gameInfo[game.toLowerCase()];
+  const key = typeof game === 'string' ? game.toLowerCase() : '';
+  const info = gameInfo[key];
   if (info) return info;
   
   // Try to get from modalHandler config
   try {
     const lfpConfig = modalHandler.getGameConfig("lfp", game);
     const lftConfig = modalHandler.getGameConfig("lft", game);
-    const displayName = lfpConfig?.displayName || lftConfig?.displayName || game.charAt(0).toUpperCase() + game.slice(1);
+    const displayName = lfpConfig?.displayName || lftConfig?.displayName || (typeof game === 'string' ? game.charAt(0).toUpperCase() + game.slice(1) : 'Unknown Game');
     
     return {
       color: Colors.Blue,
@@ -82,7 +84,7 @@ function getGameInfo(game) {
     return {
       color: Colors.Blue,
       emoji: "🎮",
-      displayName: game.charAt(0).toUpperCase() + game.slice(1)
+      displayName: typeof game === 'string' ? game.charAt(0).toUpperCase() + game.slice(1) : 'Unknown Game'
     };
   }
 }
@@ -116,7 +118,7 @@ function formatFieldValue(value, maxLength = 1000) {
  */
 function formatFieldName(key) {
   return key
-    .replace(/([A-Z])/g, ' $1')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/^./, str => str.toUpperCase())
     .replace(/\bId\b/g, 'ID')
     .replace(/\bUrl\b/g, 'URL')

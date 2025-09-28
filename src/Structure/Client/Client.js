@@ -56,7 +56,7 @@ class BotClient extends Client {
     runQuickComplianceCheck();
     
     await this.registerModules();
-    await this.login(this.config.botToken);
+    await this.login(this.config.Token);
   }
   async registerModules() {
     const { loadEvents } = new EventHandler();

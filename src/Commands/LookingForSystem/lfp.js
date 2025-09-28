@@ -136,9 +136,9 @@ class LFPSys extends Command {
 
         // Find request
         const request = await LFRequest.findById(requestId);
-        if (!request) {
+        if (!request || request.guildId !== interaction.guild.id) {
             return interaction.reply({
-                embeds: [createErrorEmbed("Request Not Found", "No request found with that ID.")],
+                embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
                 flags: MessageFlags.Ephemeral
             });
         }

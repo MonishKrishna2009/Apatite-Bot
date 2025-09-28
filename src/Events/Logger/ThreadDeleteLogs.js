@@ -22,13 +22,14 @@ const { Logger } = require("../../Structure/Functions/index.js");
 const { Events, AuditLogEvent } = require("discord.js");
 const logger = new Logger();
 
-class MessageDelete extends Event {
+class ThreadDeleteLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MessageDelete,
+            name: Events.ThreadDelete,
         });
     }
-    async execute(message) {
+
+    async execute(thread) {
         const { client } = this;
         const logManager = client.logManager;
         
@@ -36,27 +37,18 @@ class MessageDelete extends Event {
         if (!(client.config.logging?.enabled ?? client.config.logging)) return;
         
         try {
-            // Ignore bots
-            if (message.author?.bot) return;
-            
-            // Skip if no guild (DMs, etc.)
-            if (!message.guild) return;
-            
-            const member = message.member;
-            if (!member) return; // Skip if member not available
-            
             // Skip if logManager is not available
             if (!logManager) {
-                logger.warn('LogManager not available for message delete log');
+                logger.warn('LogManager not available for thread delete log');
                 return;
             }
             
-            // Check if content should be logged based on privacy settings
-            const shouldLogContent = logManager.shouldLogContent(message.channel.id, message.channel.type);
-            
-            // Get who made the change from audit logs (if available)
-            const auditEntry = await logManager.getAuditLogEntry(message.guild, AuditLogEvent.MessageDelete);
-            
+            // Skip if no guild (shouldn't happen but safety check)
+            if (!thread.guild) return;
+
+            // Get who deleted the thread from audit logs
+            const auditEntry = await logManager.getAuditLogEntry(thread.guild, AuditLogEvent.ThreadDelete, thread.id);
+
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
                 if (auditEntry) {
@@ -66,33 +58,56 @@ class MessageDelete extends Event {
                     });
                 } else {
                     embed.setFooter({
-                        text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: member.user.displayAvatarURL()
+                        text: `Thread Deleted • ${new Date().toLocaleTimeString()}`
                     });
                 }
                 return embed;
             };
 
-            // Create privacy-aware embed
-            const embed = logManager.createMessageLogEmbed(
-                "MESSAGE_DELETE",
-                0xed4245,
-                "**Message deleted**",
-                { content: message.content },
-                {
-                    includeContent: shouldLogContent,
-                    channel: message.channel,
-                    author: member.user,
-                    messageId: message.id
+            // Create thread deletion log embed
+            let description = `>>> **Thread**: ${thread.name} (\`${thread.id}\`)\n` +
+                `**Type**: ${thread.type}\n`;
+
+            if (thread.parent) {
+                description += `**Parent Channel**: ${thread.parent.name} (\`${thread.parent.id}\`)\n`;
+            }
+
+            if (thread.ownerId) {
+                const owner = thread.guild.members.cache.get(thread.ownerId);
+                if (owner) {
+                    description += `**Created By**: ${owner.user.tag} (\`${thread.ownerId}\`)\n`;
+                } else {
+                    description += `**Created By**: <@${thread.ownerId}>\n`;
                 }
+            }
+
+            if (thread.messageCount) {
+                description += `**Messages**: ${thread.messageCount}\n`;
+            }
+
+            if (thread.memberCount) {
+                description += `**Members**: ${thread.memberCount}\n`;
+            }
+
+            if (thread.createdTimestamp) {
+                description += `**Created**: <t:${Math.floor(thread.createdTimestamp / 1000)}:R>\n`;
+            }
+
+            description += `**Deleted**: <t:${Math.floor(Date.now() / 1000)}:R>`;
+
+            const embed = logManager.createLogEmbed(
+                "THREAD_DELETE",
+                0xED4245,
+                "**Thread deleted**",
+                description
             );
 
             setExecutorFooter(embed);
-            await logManager.sendPrivacyLog("messageLog", embed);
+            await logManager.sendPrivacyLog("serverLog", embed);
         } catch (error) {
-            logger.error(error);
+            logger.error("Error in ThreadDeleteLogs:", error);
         }
     }
 }
 
-module.exports = MessageDelete;
+module.exports = ThreadDeleteLogs;

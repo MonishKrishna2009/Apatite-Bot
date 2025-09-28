@@ -1,6 +1,10 @@
 # ⚙️ Architecture Guide
 
-The **Architecture Guide** provides a comprehensive overview of the Apatite Bot's technical structure, design patterns, and implementation details. This guide is essential for developers, contributors, and system administrators.
+> [!INFO]
+> The **Architecture Guide** provides a comprehensive overview of the Apatite ?Bot's technical structure, design patterns, and implementation details. This  guide is essential for developers, contributors, and system administrators.
+
+> [!IMPORTANT]
+> The architecture has been enhanced with improved error handling, better null safety, and enhanced logging capabilities. All recent updates maintain backward compatibility.
 
 ## 🏗️ System Architecture
 
@@ -26,15 +30,26 @@ graph TB
     
     B --> O[Database Layer]
     O --> P[MongoDB]
+    O --> Q[Cleanup Schemas]
     
-    B --> Q[Configuration Layer]
-    Q --> R[Environment Variables]
-    Q --> S[JSON Configs]
+    B --> R[Privacy Layer]
+    R --> S[PrivacyUtils]
+    R --> T[LogManager]
+    R --> U[DataCleanupManager]
+    
+    B --> V[Configuration Layer]
+    V --> W[Environment Variables]
+    V --> X[JSON Configs]
+    V --> Y[Privacy Controls]
     
     style A fill:#7289da
     style B fill:#4A90E2
     style O fill:#47A248
     style P fill:#47A248
+    style R fill:#9B59B6
+    style S fill:#9B59B6
+    style T fill:#9B59B6
+    style U fill:#9B59B6
 ```
 
 ---
@@ -197,7 +212,93 @@ class BaseComponent {
 }
 ```
 
-### 4. Database Layer (`src/Structure/Schemas/`)
+### 4. Functions Layer (`src/Structure/Functions/`)
+
+#### LogManager.js
+Centralized logging system with privacy controls and MongoDB integration:
+
+```javascript
+class LogManager {
+    constructor(client) {
+        this.client = client;
+        this.privacyUtils = new PrivacyUtils();
+    }
+    
+    async sendPrivacyLog(logType, embed, options = {}) {
+        // Privacy-aware logging with PII redaction
+        const processedEmbed = this.privacyUtils.processMessageContent(embed);
+        await this.sendLog(logType, processedEmbed, options);
+    }
+    
+    createMessageLogEmbed(type, color, title, messageData, options = {}) {
+        // Creates privacy-compliant embeds
+        const shouldLogContent = this.shouldLogContent(options.channel?.id);
+        return this.buildEmbed(type, color, title, messageData, shouldLogContent);
+    }
+}
+```
+
+#### PrivacyUtils.js
+Privacy compliance utilities for PII redaction and content sanitization:
+
+```javascript
+class PrivacyUtils {
+    constructor() {
+        this.piiPatterns = config.logging.privacyControls.piiPatterns;
+        this.sanitization = config.logging.privacyControls.sanitization;
+    }
+    
+    processMessageContent(content, options = {}) {
+        // PII redaction and content sanitization
+        let processed = this.redactPII(content);
+        processed = this.sanitizeContent(processed);
+        return processed;
+    }
+    
+    redactPII(content) {
+        // Remove emails, phones, SSNs, credit cards, IPs
+        Object.values(this.piiPatterns).forEach(pattern => {
+            content = content.replace(pattern, '[REDACTED]');
+        });
+        return content;
+    }
+}
+```
+
+#### DataCleanupManager.js
+Hybrid data cleanup system combining Discord API and MongoDB:
+
+```javascript
+class DataCleanupManager {
+    constructor(client) {
+        this.client = client;
+        this.cleanupFrequency = 24 * 60 * 60 * 1000; // 24 hours
+        this.discordCleanupEnabled = true;
+        this.databaseTrackingEnabled = true;
+    }
+    
+    async performCleanup() {
+        // Hybrid approach: Discord channel cleanup + MongoDB tracking
+        const stats = {
+            messageLogs: await this.cleanupDiscordMessageLogs(),
+            analyticsData: await this.cleanupDatabaseAnalytics(),
+            retriedFailures: await this.retryFailedDeletions()
+        };
+        
+        await this.storeCleanupStatistics(stats);
+        return stats;
+    }
+}
+```
+
+**Key Features:**
+- **Privacy-First Design**: GDPR/CCPA compliant data handling
+- **Hybrid Cleanup**: Discord API + MongoDB integration
+- **PII Protection**: Automatic redaction of sensitive information
+- **Audit Trails**: Complete MongoDB tracking for compliance
+- **Error Recovery**: Retry mechanisms for failed operations
+
+### 5. Database Layer (`src/Structure/Schemas/`)
 
 #### MongoDB Integration
 The bot uses Mongoose for MongoDB integration with optimized schemas:
@@ -218,7 +319,61 @@ const lfRequestSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
+
+// Data Cleanup Schemas (src/Structure/Schemas/DataCleanup/)
+const cleanupLogSchema = new mongoose.Schema({
+    timestamp: { type: Date, default: Date.now, index: true },
+    method: { type: String, required: true, enum: ['hybrid', 'discord', 'database'] },
+    stats: {
+        messageLogs: { type: Number, default: 0 },
+        metadataLogs: { type: Number, default: 0 },
+        auditLogs: { type: Number, default: 0 },
+        analyticsData: { type: Number, default: 0 },
+        errorCount: { type: Number, default: 0 },
+        retriedFailures: { type: Number, default: 0 }
+    },
+    totalDeleted: { type: Number, default: 0 },
+    retentionPolicies: {
+        fullContent: { type: Number, required: true },
+        metadata: { type: Number, required: true },
+        auditLogs: { type: Number, required: true },
+        analytics: { type: Number, required: true }
+    },
+    performance: {
+        duration: { type: Number, default: 0 },
+        channelsProcessed: { type: Number, default: 0 },
+        apiCalls: { type: Number, default: 0 },
+        rateLimitHits: { type: Number, default: 0 }
+    }
+}, {
+    timestamps: true,
+    collection: 'cleanupLogs',
+    suppressReservedKeysWarning: true
+});
+
+const failedDeletionSchema = new mongoose.Schema({
+    timestamp: { type: Date, default: Date.now, index: true },
+    channelId: { type: String, required: true },
+    channelName: { type: String },
+    messageIds: [{ type: String }],
+    logType: { type: String, required: true },
+    failureReason: { type: String },
+    retryCount: { type: Number, default: 0 },
+    lastRetry: { type: Date },
+    resolved: { type: Boolean, default: false, index: true },
+    resolvedAt: { type: Date }
+}, {
+    timestamps: true,
+    collection: 'failedDeletions',
+    suppressReservedKeysWarning: true
+});
 ```
+
+**Database Collections:**
+- **`cleanupLogs`**: Cleanup operation statistics and audit trails
+- **`failedDeletions`**: Failed deletion tracking with retry logic
+- **`analyticsData`**: Anonymized analytics and performance metrics
+- **`retentionPolicies`**: Configurable data retention policy definitions
 
 ---
 

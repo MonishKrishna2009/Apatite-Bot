@@ -57,28 +57,47 @@ class ValidationResult {
  */
 function validateUserId(userId) {
     if (!userId || typeof userId !== 'string') return false;
-    return /^\d{17,19}$/.test(userId);
+    return /^\d{17,20}$/.test(userId);
 }
 
 /**
  * Determine whether a string is a valid Discord guild ID.
  * @param {string} guildId - The guild ID to validate.
- * @returns {boolean} `true` if the value is a string of 17 to 19 digits, `false` otherwise.
+ * @returns {boolean} `true` if the value is a string of 17 to 20 digits, `false` otherwise.
  */
 function validateGuildId(guildId) {
     if (!guildId || typeof guildId !== 'string') return false;
-    return /^\d{17,19}$/.test(guildId);
+    return /^\d{17,20}$/.test(guildId);
 }
 
 /**
- * Checks whether a Discord message ID is either absent or a valid 17–19 digit snowflake.
+ * Strict snowflake validator that requires a valid 17-20 digit snowflake string.
+ * @param {string} snowflake - Snowflake ID to validate.
+ * @returns {boolean} `true` if the value is a string of 17–20 digits, `false` otherwise.
+ */
+function validateStrictSnowflake(snowflake) {
+    if (!snowflake || typeof snowflake !== 'string') return false;
+    return /^\d{17,20}$/.test(snowflake);
+}
+
+/**
+ * Validate Discord channel ID format (strict - no null/undefined allowed).
+ * @param {string} channelId - Channel ID to validate.
+ * @returns {boolean} `true` if the value is a string of 17–20 digits, `false` otherwise.
+ */
+function validateChannelId(channelId) {
+    return validateStrictSnowflake(channelId);
+}
+
+/**
+ * Checks whether a Discord message ID is either absent or a valid 17–20 digit snowflake.
  * @param {string|null|undefined} messageId - Message ID to validate; null or undefined is treated as valid.
- * @returns {boolean} `true` if `messageId` is null/undefined or a string of 17–19 digits, `false` otherwise.
+ * @returns {boolean} `true` if `messageId` is null/undefined or a string of 17–20 digits, `false` otherwise.
  */
 function validateMessageId(messageId) {
     if (!messageId) return true; // Null/undefined is valid
     if (typeof messageId !== 'string') return false;
-    return /^\d{17,19}$/.test(messageId);
+    return /^\d{17,20}$/.test(messageId);
 }
 
 /**
@@ -107,11 +126,11 @@ function validateGameConfig(gameType, game) {
     }
 
     // Validate channels exist
-    if (!validateMessageId(gameConfig.reviewChannel)) {
+    if (!validateChannelId(gameConfig.reviewChannel)) {
         result.addError(`Invalid review channel ID for game '${game}'`);
     }
 
-    if (!validateMessageId(gameConfig.publicChannel)) {
+    if (!validateChannelId(gameConfig.publicChannel)) {
         result.addError(`Invalid public channel ID for game '${game}'`);
     }
 
@@ -168,15 +187,30 @@ function validateRequestContent(content, gameType, game) {
 
     // Check required fields
     for (const field of gameConfig.fields) {
-        if (field.required && (!content[field.id] || content[field.id].trim() === '')) {
-            result.addError(`Required field '${field.label || field.id}' is missing or empty`);
+        if (field.required) {
+            const val = content[field.id];
+            const isMissing = val === null || val === undefined;
+            const isEmpty = !isMissing && (
+                typeof val === 'string' ? val.trim() === '' :
+                typeof val === 'object' ? (Array.isArray(val) ? val.length === 0 : false) :
+                String(val).trim() === ''
+            );
+            
+            if (isMissing || isEmpty) {
+                result.addError(`Required field '${field.label || field.id}' is missing or empty`);
+            }
         }
     }
 
     // Check field lengths
     for (const field of gameConfig.fields) {
-        if (content[field.id] && field.maxLength) {
-            if (content[field.id].length > field.maxLength) {
+        const val = content[field.id];
+        if (val !== null && val !== undefined && field.maxLength) {
+            const length = typeof val === 'string' ? val.length :
+                          Array.isArray(val) ? val.length :
+                          String(val).length;
+            
+            if (length > field.maxLength) {
                 result.addError(`Field '${field.label || field.id}' exceeds maximum length of ${field.maxLength} characters`);
             }
         }
@@ -316,7 +350,7 @@ async function validateChannelAccess(guild, channelId, requiredPermissions = ['V
         return result;
     }
 
-    if (!validateMessageId(channelId)) {
+    if (!validateChannelId(channelId)) {
         result.addError(`Invalid channel ID: ${channelId}`);
         return result;
     }
@@ -447,6 +481,8 @@ function sanitizeInput(input) {
     if (!input || typeof input !== 'string') return '';
     
     return input
+        .replace(/@everyone/gi, '@\u200beveryone') // Neutralize @everyone mentions
+        .replace(/@here/gi, '@\u200bhere') // Neutralize @here mentions
         .replace(/[<>]/g, '') // Remove potential HTML tags
         .replace(/```/g, '') // Remove code blocks
         .replace(/`/g, '') // Remove inline code
@@ -488,6 +524,8 @@ module.exports = {
     ValidationResult,
     validateUserId,
     validateGuildId,
+    validateChannelId,
+    validateStrictSnowflake,
     validateMessageId,
     validateGameConfig,
     validateRequestContent,

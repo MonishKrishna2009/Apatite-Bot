@@ -174,7 +174,7 @@ All moderation actions are logged with:
 ## 📸 Showcase
 
 ### Purge Command Usage
-```
+```bash
 /purge 50
 ```
 **Result**: Deletes 50 messages and provides confirmation with:

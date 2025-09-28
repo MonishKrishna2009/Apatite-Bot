@@ -47,9 +47,9 @@ class LFTEditModal extends Component {
 
     // Find request
     const req = await LFRequest.findById(requestId);
-    if (!req) {
+    if (!req || req.guildId !== interaction.guild.id) {
       return interaction.reply({
-        embeds: [createErrorEmbed("Request Not Found", "No request found with that ID.")],
+        embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
         flags: MessageFlags.Ephemeral
       });
     }

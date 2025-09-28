@@ -109,7 +109,7 @@ async function reserveRequestSlot(interaction, type, config) {
         );
 
         // Check if this would exceed the limit
-        if (result.count > config.MaxActiveRequest) {
+        if (result.value && result.value.count > config.MaxActiveRequest) {
             // Rollback the increment
             await LFRequest.db.collection('request_reservations').findOneAndUpdate(
                 { _id: reservationKey },
@@ -163,7 +163,7 @@ async function releaseReservation(interaction, type) {
         );
 
         // If count reaches 0 or below, remove the document
-        if (result && result.count <= 1) {
+        if (result && result.value && result.value.count <= 1) {
             await LFRequest.db.collection('request_reservations').deleteOne({ _id: reservationKey });
         }
 

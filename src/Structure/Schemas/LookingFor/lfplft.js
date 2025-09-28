@@ -25,7 +25,7 @@ const LFRequestSchema = new Schema({
         required: true,
         validate: {
             validator: function(v) {
-                return /^\d{17,19}$/.test(v); // Discord user ID format
+                return /^\d{17,20}$/.test(v); // Discord user ID format
             },
             message: 'Invalid user ID format'
         }
@@ -35,7 +35,7 @@ const LFRequestSchema = new Schema({
         required: true,
         validate: {
             validator: function(v) {
-                return /^\d{17,19}$/.test(v); // Discord guild ID format
+                return /^\d{17,20}$/.test(v); // Discord guild ID format
             },
             message: 'Invalid guild ID format'
         }
@@ -73,7 +73,7 @@ const LFRequestSchema = new Schema({
         default: null,
         validate: {
             validator: function(v) {
-                return !v || /^\d{17,19}$/.test(v); // Discord user ID format or null
+                return !v || /^\d{17,20}$/.test(v); // Discord user ID format or null
             },
             message: 'Invalid reviewer ID format'
         }
@@ -83,7 +83,7 @@ const LFRequestSchema = new Schema({
         default: null,
         validate: {
             validator: function(v) {
-                return !v || /^\d{17,19}$/.test(v); // Discord message ID format or null
+                return !v || /^\d{17,20}$/.test(v); // Discord message ID format or null
             },
             message: 'Invalid message ID format'
         }
@@ -93,7 +93,7 @@ const LFRequestSchema = new Schema({
         default: null,
         validate: {
             validator: function(v) {
-                return !v || /^\d{17,19}$/.test(v); // Discord message ID format or null
+                return !v || /^\d{17,20}$/.test(v); // Discord message ID format or null
             },
             message: 'Invalid public message ID format'
         }

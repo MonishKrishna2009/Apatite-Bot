@@ -22,13 +22,14 @@ const { Logger } = require("../../Structure/Functions/index.js");
 const { Events, AuditLogEvent } = require("discord.js");
 const logger = new Logger();
 
-class MessageDelete extends Event {
+class InviteDeleteLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MessageDelete,
+            name: Events.InviteDelete,
         });
     }
-    async execute(message) {
+
+    async execute(invite) {
         const { client } = this;
         const logManager = client.logManager;
         
@@ -36,27 +37,18 @@ class MessageDelete extends Event {
         if (!(client.config.logging?.enabled ?? client.config.logging)) return;
         
         try {
-            // Ignore bots
-            if (message.author?.bot) return;
-            
-            // Skip if no guild (DMs, etc.)
-            if (!message.guild) return;
-            
-            const member = message.member;
-            if (!member) return; // Skip if member not available
-            
             // Skip if logManager is not available
             if (!logManager) {
-                logger.warn('LogManager not available for message delete log');
+                logger.warn('LogManager not available for invite delete log');
                 return;
             }
             
-            // Check if content should be logged based on privacy settings
-            const shouldLogContent = logManager.shouldLogContent(message.channel.id, message.channel.type);
-            
-            // Get who made the change from audit logs (if available)
-            const auditEntry = await logManager.getAuditLogEntry(message.guild, AuditLogEvent.MessageDelete);
-            
+            // Skip if no guild (shouldn't happen but safety check)
+            if (!invite.guild) return;
+
+            // Get who deleted the invite from audit logs
+            const auditEntry = await logManager.getAuditLogEntry(invite.guild, AuditLogEvent.InviteDelete, invite.code);
+
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
                 if (auditEntry) {
@@ -66,33 +58,48 @@ class MessageDelete extends Event {
                     });
                 } else {
                     embed.setFooter({
-                        text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: member.user.displayAvatarURL()
+                        text: `Invite Deleted • ${new Date().toLocaleTimeString()}`
                     });
                 }
                 return embed;
             };
 
-            // Create privacy-aware embed
-            const embed = logManager.createMessageLogEmbed(
-                "MESSAGE_DELETE",
-                0xed4245,
-                "**Message deleted**",
-                { content: message.content },
-                {
-                    includeContent: shouldLogContent,
-                    channel: message.channel,
-                    author: member.user,
-                    messageId: message.id
+            // Create invite deletion log embed
+            let description = `>>> **Invite Code**: \`${invite.code}\`\n`;
+
+            if (invite.channel) {
+                description += `**Channel**: ${invite.channel.name} (\`${invite.channel.id}\`)\n`;
+            }
+
+            if (invite.inviter) {
+                description += `**Created By**: ${invite.inviter.tag} (\`${invite.inviter.id}\`)\n`;
+            }
+
+            if (invite.uses !== undefined) {
+                description += `**Uses**: ${invite.uses}`;
+                if (invite.maxUses) {
+                    description += `/${invite.maxUses}`;
                 }
+                description += `\n`;
+            }
+
+            if (invite.createdTimestamp) {
+                description += `**Created**: <t:${Math.floor(invite.createdTimestamp / 1000)}:R>\n`;
+            }
+
+            const embed = logManager.createLogEmbed(
+                "INVITE_DELETE",
+                0xED4245,
+                "**Invite link deleted**",
+                description
             );
 
             setExecutorFooter(embed);
-            await logManager.sendPrivacyLog("messageLog", embed);
+            await logManager.sendPrivacyLog("serverLog", embed);
         } catch (error) {
-            logger.error(error);
+            logger.error("Error in InviteDeleteLogs:", error);
         }
     }
 }
 
-module.exports = MessageDelete;
+module.exports = InviteDeleteLogs;

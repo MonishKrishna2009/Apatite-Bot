@@ -105,7 +105,7 @@ Add these to your `.env` file:
 TICKET_LOG_CHANNEL_ID=your_ticket_log_channel_id
 TICKET_DASH_CHANNEL_ID=your_ticket_dashboard_channel_id
 TICKET_SUPPORT_ROLE_ID=your_support_role_id
-TICKET_TRANSCRIPT_CHANEL_ID=your_transcript_channel_id
+TICKET_TRANSCRIPT_CHANNEL_ID=your_transcript_channel_id
 TICKET_CATEGORY=your_ticket_category_id
 ```
 
@@ -116,7 +116,7 @@ ticketSystem: true,
 ticketLogChannelId: process.env.TICKET_LOG_CHANNEL_ID,
 ticketDashChannelId: process.env.TICKET_DASH_CHANNEL_ID,
 ticketSupportRoleId: process.env.TICKET_SUPPORT_ROLE_ID,
-ticketTranscriptChannelId: process.env.TICKET_TRANSCRIPT_CHANEL_ID,
+ticketTranscriptChannelId: process.env.TICKET_TRANSCRIPT_CHANNEL_ID,
 ticketCategoryId: process.env.TICKET_CATEGORY,
 ```
 

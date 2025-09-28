@@ -33,7 +33,15 @@ class VoiceLogs extends Event {
         const { client } = this;
         const logManager = client.logManager;
 
+        // Check if logging is enabled - compatible with both boolean and object configs
+        if (!(client.config.logging?.enabled ?? client.config.logging)) return;
+
         try {
+            // Skip if logManager is not available
+            if (!logManager) {
+                logger.warn('LogManager not available for voice log');
+                return;
+            }
             const member = newState.member || oldState.member;
 
             // Audit Log (for kicks/moves by mods, if available)
@@ -64,7 +72,7 @@ class VoiceLogs extends Event {
                     `**Channel**: ${newState.channel.name} (<#${newState.channel.id}>)`
                 );
                 setExecutorFooter(embed);
-                return await logManager.sendLog("voiceLog", embed);
+                return await logManager.sendPrivacyLog("voiceLog", embed);
             }
 
             // ---------------- LEAVE VOICE CHANNEL ----------------
@@ -77,7 +85,7 @@ class VoiceLogs extends Event {
                     `**Channel**: ${oldState.channel.name} (<#${oldState.channel.id}>)`
                 );
                 setExecutorFooter(embed);
-                return await logManager.sendLog("voiceLog", embed);
+                return await logManager.sendPrivacyLog("voiceLog", embed);
             }
 
             // ---------------- MOVED VOICE CHANNEL ----------------
@@ -91,7 +99,7 @@ class VoiceLogs extends Event {
                     `**To**: ${newState.channel.name} (<#${newState.channel.id}>)`
                 );
                 setExecutorFooter(embed);
-                return await logManager.sendLog("voiceLog", embed);
+                return await logManager.sendPrivacyLog("voiceLog", embed);
             }
 
         } catch (error) {

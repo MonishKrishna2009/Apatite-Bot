@@ -57,7 +57,9 @@ const ALLOWED_TRANSITIONS = {
  */
 function isStatusTransitionAllowed(fromStatus, toStatus) {
     if (!fromStatus || !toStatus) return false;
-    return ALLOWED_TRANSITIONS[fromStatus]?.includes(toStatus) || false;
+    const normalizedFromStatus = normalizeStatus(fromStatus);
+    const normalizedToStatus = normalizeStatus(toStatus);
+    return ALLOWED_TRANSITIONS[normalizedFromStatus]?.includes(normalizedToStatus) || false;
 }
 
 /**
@@ -66,7 +68,8 @@ function isStatusTransitionAllowed(fromStatus, toStatus) {
  * @returns {boolean} `true` if `status` matches one of the defined `STATUS` values, `false` otherwise.
  */
 function isValidStatus(status) {
-    return Object.values(STATUS).includes(status);
+    const normalizedStatus = normalizeStatus(status);
+    return Object.values(STATUS).includes(normalizedStatus);
 }
 
 /**
@@ -103,6 +106,7 @@ function isSoftDeletedStatus(status) {
  * @returns {Colors} - Discord color
  */
 function getStatusColor(status) {
+    const normalizedStatus = normalizeStatus(status);
     const colorMap = {
         [STATUS.PENDING]: Colors.Yellow,
         [STATUS.APPROVED]: Colors.Green,
@@ -112,7 +116,7 @@ function getStatusColor(status) {
         [STATUS.CANCELLED]: Colors.Blue,
         [STATUS.DELETED]: Colors.DarkGrey
     };
-    return colorMap[status] || Colors.Grey;
+    return colorMap[normalizedStatus] || Colors.Grey;
 }
 
 /**
@@ -121,6 +125,7 @@ function getStatusColor(status) {
  * @returns {string} - Emoji string
  */
 function getStatusEmoji(status) {
+    const normalizedStatus = normalizeStatus(status);
     const emojiMap = {
         [STATUS.PENDING]: "⏳",
         [STATUS.APPROVED]: "✅",
@@ -130,7 +135,7 @@ function getStatusEmoji(status) {
         [STATUS.CANCELLED]: "🚫",
         [STATUS.DELETED]: "🗑️"
     };
-    return emojiMap[status] || "❓";
+    return emojiMap[normalizedStatus] || "❓";
 }
 
 /**
@@ -401,10 +406,14 @@ async function cleanupRequests(guild, userId, type, publicChannelId, config) {
                 if (req.publicMessageId) {
                     const { getGameChannels } = require("./lfActionLogger");
                     const channels = getGameChannels(config, req.game);
-                    const publicChannel = guild.channels.cache.get(channels.publicChannelId);
-                    if (publicChannel) {
-                        const msg = await publicChannel.messages.fetch(req.publicMessageId).catch(() => null);
-                        if (msg) await msg.delete();
+                    
+                    // Check if channels configuration exists and has publicChannelId
+                    if (channels && channels.publicChannelId) {
+                        const publicChannel = guild.channels.cache.get(channels.publicChannelId);
+                        if (publicChannel) {
+                            const msg = await publicChannel.messages.fetch(req.publicMessageId).catch(() => null);
+                            if (msg) await msg.delete();
+                        }
                     }
                 }
 
@@ -482,6 +491,13 @@ async function globalCleanup(client, config) {
                         try {
                             const { getGameChannels } = require("./lfActionLogger");
                             const channels = getGameChannels(config, game);
+                            
+                            // Check if channels configuration exists and has publicChannelId
+                            if (!channels || !channels.publicChannelId) {
+                                logger.warn(`Channel configuration missing for game ${game} in guild ${guild.id}, skipping cleanup`);
+                                continue;
+                            }
+                            
                             const gameResults = await cleanupRequests(guild, null, type, channels.publicChannelId, config);
                             results.totalExpired += gameResults.expired;
                             results.totalArchived += gameResults.archived;

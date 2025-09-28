@@ -22,13 +22,14 @@ const { Logger } = require("../../Structure/Functions/index.js");
 const { Events, AuditLogEvent } = require("discord.js");
 const logger = new Logger();
 
-class MessageDelete extends Event {
+class GuildBanRemoveLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.MessageDelete,
+            name: Events.GuildBanRemove,
         });
     }
-    async execute(message) {
+
+    async execute(ban) {
         const { client } = this;
         const logManager = client.logManager;
         
@@ -36,63 +37,56 @@ class MessageDelete extends Event {
         if (!(client.config.logging?.enabled ?? client.config.logging)) return;
         
         try {
-            // Ignore bots
-            if (message.author?.bot) return;
-            
-            // Skip if no guild (DMs, etc.)
-            if (!message.guild) return;
-            
-            const member = message.member;
-            if (!member) return; // Skip if member not available
-            
             // Skip if logManager is not available
             if (!logManager) {
-                logger.warn('LogManager not available for message delete log');
+                logger.warn('LogManager not available for guild ban remove log');
                 return;
             }
             
-            // Check if content should be logged based on privacy settings
-            const shouldLogContent = logManager.shouldLogContent(message.channel.id, message.channel.type);
-            
-            // Get who made the change from audit logs (if available)
-            const auditEntry = await logManager.getAuditLogEntry(message.guild, AuditLogEvent.MessageDelete);
-            
+            // Skip if no guild (shouldn't happen but safety check)
+            if (!ban.guild) return;
+
+            // Get who made the unban from audit logs
+            const auditEntry = await logManager.getAuditLogEntry(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
+
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
-                if (auditEntry) {
+                if (auditEntry && auditEntry.executor) {
                     embed.setFooter({
                         text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
                         iconURL: auditEntry.executor.displayAvatarURL()
                     });
                 } else {
                     embed.setFooter({
-                        text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: member.user.displayAvatarURL()
+                        text: `Unban • ${new Date().toLocaleTimeString()}`
                     });
                 }
                 return embed;
             };
 
-            // Create privacy-aware embed
-            const embed = logManager.createMessageLogEmbed(
-                "MESSAGE_DELETE",
-                0xed4245,
-                "**Message deleted**",
-                { content: message.content },
-                {
-                    includeContent: shouldLogContent,
-                    channel: message.channel,
-                    author: member.user,
-                    messageId: message.id
-                }
-            );
+            // Create unban log embed
+            let description = `>>> **User**: ${ban.user.tag} (\`${ban.user.id}\`)\n` +
+                `**User ID**: \`${ban.user.id}\`\n` +
+                `**Account Created**: <t:${Math.floor(ban.user.createdTimestamp / 1000)}:R>`;
+
+            // Add audit log reason if available
+            if (auditEntry?.reason) {
+                description += `\n**Reason**: ${auditEntry.reason}`;
+            }
+
+            const embed = logManager.createLogEmbed(
+                "GUILD_BAN_REMOVE",
+                0x57F287,
+                "**Member unbanned**",
+                description
+            ).setThumbnail(ban.user.displayAvatarURL({ dynamic: true }));
 
             setExecutorFooter(embed);
-            await logManager.sendPrivacyLog("messageLog", embed);
+            await logManager.sendPrivacyLog("serverLog", embed);
         } catch (error) {
-            logger.error(error);
+            logger.error("Error in GuildBanRemoveLogs:", error);
         }
     }
 }
 
-module.exports = MessageDelete;
+module.exports = GuildBanRemoveLogs;

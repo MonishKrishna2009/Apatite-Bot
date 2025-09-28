@@ -31,8 +31,19 @@ class ChannelDeleteLogs extends Event {
     async execute(channel) {
         const { client } = this;
         const logManager = client.logManager;
-        if (client.config.logging !== true) return;
+        
+        // Check if logging is enabled - compatible with both boolean and object configs
+        if (!(client.config.logging?.enabled ?? client.config.logging)) return;
+        
         try {
+            // Skip if logManager is not available
+            if (!logManager) {
+                logger.warn('LogManager not available for channel delete log');
+                return;
+            }
+            
+            // Skip if no guild (shouldn't happen but safety check)
+            if (!channel.guild) return;
             // Get who made the change from audit logs
             const auditEntry = await logManager.getAuditLogEntry(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
             // Helper: build footer with executor if exists
@@ -54,7 +65,7 @@ class ChannelDeleteLogs extends Event {
                 `**Created At**: <t:${Math.floor(channel.createdTimestamp / 1000)}:R>`
             );
             setExecutorFooter(embed);
-            await logManager.sendLog("serverLog", embed);
+            await logManager.sendPrivacyLog("serverLog", embed);
         } catch (error) {
             logger.error(error);
         }

@@ -23,6 +23,7 @@ const { ComponentHandler, } = require("../../Structure/Handlers/ComponentHandler
 const { ConnectMongo } = require("../../Structure/Schemas/index");
 const { Events, ActivityType, PresenceUpdateStatus } = require("discord.js");
 const { Logger, LogManager } = require("../../Structure/Functions/index");
+const { DataCleanupManager } = require("../../Structure/Functions/DataCleanupManager");
 const logger = new Logger();
 
 class Ready extends Event {
@@ -86,6 +87,20 @@ class Ready extends Event {
       logger.info("LogManager initialized.");
     } catch (error) {
       logger.error("Failed to initialize LogManager:", error);
+    }
+
+    // Initialize DataCleanupManager for hybrid approach
+    try {
+      client.dataCleanupManager = new DataCleanupManager(client);
+      logger.info("DataCleanupManager initialized with hybrid approach.");
+      
+      // Start the cleanup system if logging is enabled
+      if (client.config.logging?.enabled) {
+        client.dataCleanupManager.startCleanup();
+        logger.info("Data cleanup system started.");
+      }
+    } catch (error) {
+      logger.error("Failed to initialize DataCleanupManager:", error);
     }
   }
 }

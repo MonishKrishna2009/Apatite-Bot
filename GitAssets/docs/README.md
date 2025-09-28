@@ -1,13 +1,13 @@
 # 📚 Apatite Bot Documentation
 
-Welcome to the comprehensive documentation for the Apatite Bot - the all-in-one open-source Discord bot for esports, tournaments, and community management.
+Welcome to the Apatite Bot documentation. This Discord bot handles esports matchmaking, community management, and moderation for gaming communities.
 
 > [!CAUTION]
 > Most of the documentation for this project has been generated with the help of AI, as I don’t have much time to write it all manually. The docs have been reviewed for errors, but if you spot any issues, please open an issue or submit a pull request with a fix.
 
 ## 🎯 Quick Start
 
-- **New to the project?** Start with the [Main README](../readme.md)
+- **New to the project?** Start with the [Main README](../../readme.md)
 - **Setting up the bot?** Follow the [Discord Bot Setup Guide](./Discord-bot-creation.md)
 - **Need a database?** Check the [MongoDB Setup Guide](./MongoDB.md)
 - **Want to understand the architecture?** Read the [Architecture Guide](./Architecture-Guide.md)

@@ -1,5 +1,7 @@
 # Apatite Bot
-⚡ The all-in-one open-source Discord bot for esports, tournaments, and community management.
+⚡ Discord bot for esports matchmaking, community management, and moderation.
+
+A Discord bot built with [discord.js v14](https://discord.js.org) and MongoDB, designed for ticketing, player/team matchmaking (LFP/LFT), logging, and moderation tools. Perfect for gaming communities and esports servers.
 
 > [!IMPORTANT]
 > This project is actively maintained and production-ready. The LFP/LFT system is fully implemented and stable.
@@ -25,9 +27,6 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 ## ✨ Features 
 
-> [!CAUTION]
-> Most of the documentation for this project has been generated with the help of AI, as I don’t have much time to write it all manually. The docs have been reviewed for errors, but if you spot any issues, please open an issue or submit a pull request with a fix.
-
 - 👥 **LFP / LFT System** ✅
   - **Multi-game Support**: Valorant, CS2, League of Legends (easily extensible)
   - **JSON Configuration**: Games and fields defined in config files, no code changes needed
@@ -41,6 +40,7 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
   - **Performance**: Database indexes, timeout handling, error recovery
   - **Message Recovery**: Automatic recovery of accidentally deleted messages
   - **Enhanced Staff Tools**: Complete `/lfstaff` command suite with analytics
+  - **Recent Improvements**: Better field name formatting, content length limits, null safety
   - [Read More →](./GitAssets/docs/Lfp-Lft%20System.md)
 
 - 🎫 **Ticket System** ✅
@@ -59,13 +59,16 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
   - **Action Logging**: Complete audit trail for all moderation actions
   - [Read More →](./GitAssets/docs/Moderation-System.md)
 
-- 📜 **Comprehensive Logging System** ✅
-  - **Server Events**: Channel create/delete/update, role create/delete/update
-  - **Member Events**: Join/leave, role changes, nickname updates
-  - **Message Events**: Create, edit, delete, bulk delete with content preservation
-  - **Voice Events**: Voice state changes and channel activity
-  - **Audit Trail**: Integration with Discord audit logs for executor tracking
-  - **Beautiful Formatting**: Professional embed formatting with timestamps
+- 📜 **Advanced Logging System** ✅
+  - **Complete Event Coverage**: 23+ Discord events including bans, invites, threads, webhooks, emojis, stickers
+  - **Privacy-First Design**: GDPR/CCPA compliant with PII redaction and content sanitization
+  - **Hybrid Data Cleanup**: MongoDB + Discord API integration for reliable data retention
+  - **Smart Retention Policies**: Configurable retention periods (30 days content, 1 year metadata, 7 years audit)
+  - **Opt-in Content Logging**: Full message content logging disabled by default for privacy
+  - **Audit Trail**: Complete executor tracking with Discord audit log integration
+  - **Professional Formatting**: Clean embeds with timestamps and user avatars
+  - **Performance Optimized**: Database indexes, rate limiting, and efficient cleanup cycles
+  - **Recent Improvements**: Reduced logging verbosity, better error handling, config compatibility
   - [Read More →](./GitAssets/docs/Logging-System.md)
 
 - ⚙️ **Advanced Architecture** ✅
@@ -74,10 +77,11 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
   - **Database Integration**: MongoDB with optimized schemas and indexes
   - **Configuration Management**: Environment-based configuration system
   - **License Compliance**: GPL v3.0 compliance with automated checking
+  - **Recent Improvements**: Better null safety, type guards, async error handling
   - [Read More →](./GitAssets/docs/Architecture-Guide.md)
 
 > [!TIP]
-> Each system has its own dedicated `.md` file inside `/docs`. Start there if you’re exploring a specific feature.
+> Each system has its own dedicated `.md` file inside `/docs`. Start there if you're exploring a specific feature.
 ---
 
 ## 📂 Project Structure 
@@ -139,7 +143,7 @@ CLIENT_SECRET = ""
 # Database Stuff
 MONGO_URI = "" 
 
-# Logging Stuff
+# Logging Stuff (Channel IDs only - Privacy controls in config.js)
 LOG_WEBHOOK = ""
 SERVER_LOG_CHANNEL_ID = ""
 MEMBER_LOG_CHANNEL_ID = ""
@@ -152,7 +156,7 @@ WARN_LOG_CHANNEL_ID = ""
 TICKET_LOG_CHANNEL_ID = ""
 TICKET_DASH_CHANNEL_ID = ""
 TICKET_SUPPORT_ROLE_ID = ""
-TICKET_TRANSCRIPT_CHANEL_ID = ""
+TICKET_TRANSCRIPT_CHANNEL_ID = ""
 TICKET_CATEGORY = ""
 
 #LFP LFT Stuff
@@ -212,6 +216,29 @@ The LFP/LFT system has undergone a comprehensive audit and enhancement process, 
 - Batch operations for efficient processing
 
 **The system is now robust, secure, and highly reliable for production use!**
+
+### **Advanced Logging System - Production Ready** ✅
+The logging system has been completely overhauled with **privacy-first design** and **comprehensive event coverage**:
+
+#### **🔒 Privacy & Compliance**
+- **GDPR/CCPA Compliant**: Automatic PII redaction and content sanitization
+- **Privacy-First Defaults**: Full message content logging disabled by default
+- **User Rights Support**: Data deletion, portability, and access request handling
+- **Retention Policies**: Configurable data retention with automatic cleanup
+
+#### **📊 Complete Event Coverage**
+- **23+ Discord Events**: Server, member, message, voice, ban, invite, thread, webhook, emoji, sticker events
+- **Hybrid Data Cleanup**: MongoDB tracking + Discord API integration for reliable retention
+- **Smart Analytics**: Anonymized performance metrics and cleanup statistics
+- **Error Recovery**: Comprehensive error handling with retry mechanisms
+
+#### **⚡ Performance & Reliability**
+- **Database Indexes**: Optimized MongoDB queries for fast cleanup operations
+- **Rate Limiting**: Discord API rate limit handling and backoff strategies
+- **Silent Operation**: Minimal logging output with essential completion notifications
+- **MongoDB Integration**: Complete audit trails and cleanup statistics storage
+
+**The logging system is now enterprise-grade with full privacy compliance!**
 
 ---
 

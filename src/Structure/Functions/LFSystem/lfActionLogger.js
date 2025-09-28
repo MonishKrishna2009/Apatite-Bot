@@ -102,9 +102,15 @@ async function logLFAction(client, config, action, request, user, staff = null, 
                 .join('\n');
 
             if (contentPreview) {
+                // Ensure content preview doesn't exceed Discord's 1024 character limit
+                let finalPreview = contentPreview;
+                if (finalPreview.length > 1024) {
+                    finalPreview = finalPreview.substring(0, 1021) + '…';
+                }
+                
                 embed.addFields({ 
                     name: '📋 Request Details', 
-                    value: `>>> ${contentPreview}`, 
+                    value: `>>> ${finalPreview}`, 
                     inline: false 
                 });
             }

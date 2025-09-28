@@ -45,6 +45,11 @@ class LFReviewHandler extends Component {
         const req = await LFRequest.findById(requestId);
         if (!req) return interaction.reply({ content: "❌ Request not found.", flags: MessageFlags.Ephemeral });
 
+        // Cross-guild protection guard
+        if (req.guildId !== interaction.guild.id) {
+            return interaction.reply({ content: "❌ Request not found in this guild.", flags: MessageFlags.Ephemeral });
+        }
+
         if (req.status !== "pending") {
             return interaction.reply({ content: "⚠️ This request has already been reviewed.", flags: MessageFlags.Ephemeral });
         }
@@ -64,7 +69,8 @@ class LFReviewHandler extends Component {
 
         // Update review embed
         const oldEmbed = interaction.message.embeds[0];
-        const newEmbed = EmbedBuilder.from(oldEmbed)
+        const newEmbed = oldEmbed ? EmbedBuilder.from(oldEmbed) : new EmbedBuilder();
+        newEmbed
             .setTitle(req.type === "LFP" ? "👥 LFP Request" : "🔎 LFT Request")
             .setColor(action === "approve" ? Colors.Green : Colors.Red)
             .setFooter({ text: `Reviewed by ${interaction.user.tag} | Request ID: ${req._id}` });

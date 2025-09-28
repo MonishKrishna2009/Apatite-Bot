@@ -93,6 +93,7 @@ flowchart TD
 ## 🎯 Complete Event Coverage
 
 ### **High Priority Events (Core Functionality)**
+
 | Event | File | Description | Privacy Level |
 |-------|------|-------------|---------------|
 | **MessageDelete** | `MessageDeletelogs.js` | Message deletion with content preservation | Content-based |
@@ -118,12 +119,12 @@ flowchart TD
 | **ThreadUpdate** | `ThreadUpdateLogs.js` | Thread modification events | Metadata-only |
 
 ### **Medium Priority Events (Enhanced Coverage)**
+
 | Event | File | Description | Privacy Level |
 |-------|------|-------------|---------------|
 | **WebhookUpdate** | `WebhookUpdateLogs.js` | Webhook configuration changes | Metadata-only |
 | **EmojiUpdate** | `EmojiUpdateLogs.js` | Server emoji changes | Metadata-only |
 | **StickerUpdate** | `StickerUpdateLogs.js` | Server sticker changes | Metadata-only |
-
 ### **Privacy Classification**
 - **Content-based**: Full message content may be logged (opt-in only)
 - **Metadata-only**: Only event metadata and user information (default)

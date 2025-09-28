@@ -3,8 +3,8 @@
 The logging system tracks Discord server events and provides audit trails for moderation and compliance. It handles everything from message changes to member activities with privacy controls built-in.
 
 > [!IMPORTANT]
-> **Privacy & Compliance**: This logging system is designed with privacy-first principles. All data collection, processing, and retention follows strict privacy 
-controls and compliance requirements. Review the [Data Retention Policy](../README.md#data-retention-policy) before configuration.
+> **Privacy & Compliance**: This logging system is designed with privacy-first principles. All data collection, processing, and retention follows strict privacy
+> controls and compliance requirements. Review the [Data Retention Policy](../README.md#data-retention-policy) before configuration.
 
 > [!INFO]
 > **Recent Updates**: The logging system has been enhanced with reduced verbosity, better error handling, and improved config compatibility. DataCleanupManager now only logs initialization and completion with comprehensive stats.

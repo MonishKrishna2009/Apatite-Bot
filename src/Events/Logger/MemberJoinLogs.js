@@ -51,7 +51,8 @@ class MemberJoinLogs extends Event {
                 "**Member joined the server**",
                 `>>> **Member**: ${member.user.tag} (\`${member.id}\`)\n` +
                 `**Account Created**: <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
-            ).setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
+            ).setThumbnail(member.user.displayAvatarURL({ extension: 'png', size: 1024 }))
+             .setTimestamp();
             
             await logManager.sendPrivacyLog("memberLog", embed);
         } catch (error) {

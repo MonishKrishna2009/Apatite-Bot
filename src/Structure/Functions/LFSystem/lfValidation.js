@@ -250,7 +250,15 @@ function validateMessageLimits(content = "", embeds = []) {
 
     // Validate each embed
     for (let i = 0; i < embeds.length; i++) {
-        const embedResult = validateEmbedLimits(embeds[i]);
+        const embed = embeds[i];
+        
+        // Guard against invalid embed objects
+        if (!embed || typeof embed !== 'object' || !embed.data) {
+            result.addError(`Embed ${i + 1}: Invalid embed object (missing or malformed)`);
+            continue;
+        }
+        
+        const embedResult = validateEmbedLimits(embed);
         if (!embedResult.isValid) {
             result.addError(`Embed ${i + 1}: ${embedResult.errors.join(', ')}`);
         }
@@ -288,6 +296,11 @@ function validateMessageLimits(content = "", embeds = []) {
  */
 function validateEmbedLimits(embed) {
     const result = new ValidationResult();
+
+    // Early return guard for missing embed or data
+    if (!embed || !embed.data) {
+        return result;
+    }
 
     const data = embed.data;
 

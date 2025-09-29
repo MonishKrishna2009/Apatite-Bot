@@ -25,7 +25,7 @@ const logger = new Logger();
 class EmojiUpdateLogs extends Event {
     constructor(client) {
         super(client, {
-            name: Events.GuildEmojisUpdate,
+            name: Events.GuildEmojiUpdate,
         });
     }
 
@@ -54,14 +54,14 @@ class EmojiUpdateLogs extends Event {
 
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed, auditEntry) => {
-                if (auditEntry) {
+                if (auditEntry && auditEntry.executor) {
                     embed.setFooter({
                         text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
                         iconURL: auditEntry.executor.displayAvatarURL()
                     });
                 } else {
                     embed.setFooter({
-                        text: `Emoji Updated • ${new Date().toLocaleTimeString()}`
+                        text: `Emoji Change • ${new Date().toLocaleTimeString()}`
                     });
                 }
                 return embed;
@@ -95,7 +95,6 @@ class EmojiUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
             // Check for removed emojis
@@ -126,7 +125,6 @@ class EmojiUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
             // Check for updated emojis (name changes)
@@ -162,10 +160,9 @@ class EmojiUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
-            // Update snapshot for future comparisons
+            // Update snapshot for future comparisons (always persist, regardless of changes)
             client._emojiSnapshots[guild.id] = newEmojis.clone();
 
         } catch (error) {

@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const { EmbedBuilder} = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, PermissionsBitField } = require('discord.js');
 const { PrivacyUtils } = require('./PrivacyUtils.js');
 
 class LogManager {
@@ -74,9 +74,32 @@ class LogManager {
                 return;
             }
 
-            // Check if bot has permission to send messages in this channel
-            if (!channel.permissionsFor(this.client.user)?.has('SendMessages')) {
-                console.warn(`No permission to send messages in channel ${channelId} for log type: ${logType}`);
+            // Check if channel is a guild text channel
+            if (!channel.isTextBased() || !channel.guild) {
+                console.warn(`Channel ${channelId} is not a guild text channel for log type: ${logType}`);
+                return;
+            }
+
+            // Fetch bot's guild member and check permissions
+            const botMember = await channel.guild.members.fetch(this.client.user.id).catch(() => null);
+            if (!botMember) {
+                console.warn(`Could not fetch bot member in guild ${channel.guild.id} for log type: ${logType}`);
+                return;
+            }
+
+            // Check required permissions
+            const requiredPermissions = [
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.EmbedLinks
+            ];
+
+            const missingPermissions = requiredPermissions.filter(permission => 
+                !botMember.permissionsIn(channel).has(permission)
+            );
+
+            if (missingPermissions.length > 0) {
+                console.warn(`Missing permissions in channel ${channelId} for log type: ${logType}. Missing: ${missingPermissions.join(', ')}`);
                 return;
             }
 
@@ -89,8 +112,8 @@ class LogManager {
     // Get audit log entry for actions
     async getAuditLogEntry(guild, action, targetId = null) {
         try {
-            // Check if guild has audit log permissions
-            if (!guild.me?.permissions?.has('ViewAuditLog')) {
+            // Check if bot has audit log permissions
+            if (!guild.members.me?.permissions?.has(PermissionFlagsBits.ViewAuditLog)) {
                 return null;
             }
 

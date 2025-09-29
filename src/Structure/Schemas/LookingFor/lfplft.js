@@ -112,8 +112,17 @@ const LFRequestSchema = new Schema({
         required: true,
         validate: {
             validator: function(v) {
-                const createdTimestamp = this.createdAt || this.get('createdAt') || Date.now();
-                return v > createdTimestamp; // Expiry must be after creation
+                // Check if we're in a query context (this.get is not a function)
+                if (typeof this.get !== 'function') {
+                    return true; // Skip validation in query context
+                }
+                
+                const createdAt = this.get('createdAt');
+                if (!createdAt) {
+                    return true; // Skip validation if createdAt is not available
+                }
+                
+                return v > createdAt; // Expiry must be after creation
             },
             message: 'Expiry date must be after creation date'
         }
@@ -123,8 +132,17 @@ const LFRequestSchema = new Schema({
         default: null,
         validate: {
             validator: function(v) {
-                const createdTimestamp = this.createdAt || this.get('createdAt') || Date.now();
-                return !v || v > createdTimestamp; // Archive date must be after creation
+                // Check if we're in a query context (this.get is not a function)
+                if (typeof this.get !== 'function') {
+                    return true; // Skip validation in query context
+                }
+                
+                const createdAt = this.get('createdAt');
+                if (!createdAt) {
+                    return true; // Skip validation if createdAt is not available
+                }
+                
+                return !v || v > createdAt; // Archive date must be after creation
             },
             message: 'Archive date must be after creation date'
         }
@@ -134,8 +152,17 @@ const LFRequestSchema = new Schema({
         default: null,
         validate: {
             validator: function(v) {
-                const createdTimestamp = this.createdAt || this.get('createdAt') || Date.now();
-                return !v || v > createdTimestamp; // Delete date must be after creation
+                // Check if we're in a query context (this.get is not a function)
+                if (typeof this.get !== 'function') {
+                    return true; // Skip validation in query context
+                }
+                
+                const createdAt = this.get('createdAt');
+                if (!createdAt) {
+                    return true; // Skip validation if createdAt is not available
+                }
+                
+                return !v || v > createdAt; // Delete date must be after creation
             },
             message: 'Delete date must be after creation date'
         }

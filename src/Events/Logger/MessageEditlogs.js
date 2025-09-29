@@ -57,22 +57,12 @@ class MessageEdit extends Event {
             // Check if content should be logged based on privacy settings
             const shouldLogContent = logManager.shouldLogContent(newMessage.channel.id, newMessage.channel.type);
             
-            // Get who made the change from audit logs (if available)
-            const auditEntry = await logManager.getAuditLogEntry(newMessage.guild, AuditLogEvent.MessageUpdate);
-            
-            // Helper: build footer with executor if exists
+            // Helper: build footer with message author
             const setExecutorFooter = (embed) => {
-                if (auditEntry) {
-                    embed.setFooter({
-                        text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: auditEntry.executor.displayAvatarURL()
-                    });
-                } else {
-                    embed.setFooter({
-                        text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: member.user.displayAvatarURL()
-                    });
-                }
+                embed.setFooter({
+                    text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
+                    iconURL: member.user.displayAvatarURL()
+                });
                 return embed;
             };
 

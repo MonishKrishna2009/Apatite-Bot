@@ -371,11 +371,6 @@ class DataCleanupManager {
 
                     // Set up for next batch
                     beforeMessageId = oldestMessage?.id;
-                    
-                    // Only break when there are no messages or when we've reached messages older than cutoff
-                    if (!oldestMessage || oldestMessage.createdAt < cutoffDate) {
-                        break;
-                    }
 
                     // Rate limiting: wait between batches to avoid hitting Discord API limits
                     await this.delay(1000); // 1 second delay
@@ -422,6 +417,17 @@ class DataCleanupManager {
                     // Bulk delete for recent messages
                     const deleted = await channel.bulkDelete(recentMessages, true);
                     result.deleted += deleted.size;
+                } else if (recentMessages.length === 1) {
+                    // Individual delete for single recent message
+                    const messageId = recentMessages[0];
+                    try {
+                        const message = channel.messages.cache.get(messageId) || await channel.messages.fetch(messageId);
+                        await message.delete();
+                        result.deleted++;
+                    } catch (error) {
+                        this.logger.warn(`Failed to delete recent message ${messageId}: ${error.message}`);
+                        result.failed.push(messageId);
+                    }
                 }
 
                 // Individual delete for older messages
@@ -698,14 +704,15 @@ class DataCleanupManager {
             let deletedCount = 0;
 
             switch (collectionName) {
-                case 'analyticsData':
+                case 'analyticsData': {
                     const analyticsResult = await AnalyticsData.deleteMany({
                         timestamp: { $lt: cutoffDate }
                     });
                     deletedCount = analyticsResult.deletedCount;
                     break;
+                }
                     
-                case 'cleanupLogs':
+                case 'cleanupLogs': {
                     // Keep cleanup logs for audit purposes, but limit retention
                     const cleanupCutoff = new Date();
                     cleanupCutoff.setDate(cleanupCutoff.getDate() - 365); // Keep for 1 year
@@ -715,8 +722,9 @@ class DataCleanupManager {
                     });
                     deletedCount = cleanupResult.deletedCount;
                     break;
+                }
                     
-                case 'failedDeletions':
+                case 'failedDeletions': {
                     // Clean up resolved failed deletions older than 30 days
                     const failedCutoff = new Date();
                     failedCutoff.setDate(failedCutoff.getDate() - 30);
@@ -727,6 +735,7 @@ class DataCleanupManager {
                     });
                     deletedCount = failedResult.deletedCount;
                     break;
+                }
                     
                 default:
                     this.logger.warn(`Unknown collection name: ${collectionName}`);
@@ -872,13 +881,14 @@ class DataCleanupManager {
                 case 'failedDeletions':
                     deletedCount = await this.retryFailedDeletions();
                     break;
-                case 'discord':
+                case 'discord': {
                     // Clean up all Discord channels
                     const messageLogs = await this.cleanupDiscordMessageLogs();
                     const metadataLogs = await this.cleanupDiscordMetadataLogs();
                     const auditLogs = await this.cleanupDiscordAuditLogs();
                     deletedCount = messageLogs + metadataLogs + auditLogs;
                     break;
+                }
                 case 'database':
                     deletedCount = await this.cleanupDatabaseAnalytics();
                     break;

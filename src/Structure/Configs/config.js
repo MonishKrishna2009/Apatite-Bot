@@ -308,3 +308,12 @@ module.exports = {
         // Add more development guilds here as needed
       ],
 }
+
+// ============================================================================
+// CONFIGURATION VALIDATION
+// ============================================================================
+
+const { validateConfig } = require('../Functions/ConfigValidator');
+
+// Validate configuration on startup
+validateConfig(module.exports);

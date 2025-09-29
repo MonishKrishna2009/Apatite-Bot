@@ -132,8 +132,8 @@ class PrivacyUtils {
         }
 
         // Process content with privacy controls
+        const originalLength = (content || '').length;
         let processedContent = content || '*No content*';
-        const originalLength = processedContent.length;
         let wasRedacted = false;
         let wasSanitized = false;
 
@@ -240,8 +240,8 @@ class PrivacyUtils {
      * @returns {Date} - Date when data should be deleted
      */
     getRetentionDate(dataType) {
-        const retentionDays = config.logging?.retentionDays || {};
-        const days = retentionDays[dataType] || retentionDays.metadata || 365;
+        const retentionDays = config.logging?.retentionDays ?? {};
+        const days = retentionDays[dataType] ?? retentionDays.metadata ?? 365;
         
         const retentionDate = new Date();
         retentionDate.setDate(retentionDate.getDate() - days);

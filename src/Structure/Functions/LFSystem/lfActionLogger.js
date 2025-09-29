@@ -103,14 +103,18 @@ async function logLFAction(client, config, action, request, user, staff = null, 
 
             if (contentPreview) {
                 // Ensure content preview doesn't exceed Discord's 1024 character limit
+                const prefix = '>>> ';
+                const ellipsis = '…';
+                const maxContentLength = 1024 - prefix.length - ellipsis.length; // 1019
+                
                 let finalPreview = contentPreview;
-                if (finalPreview.length > 1024) {
-                    finalPreview = finalPreview.substring(0, 1021) + '…';
+                if (finalPreview.length > maxContentLength) {
+                    finalPreview = finalPreview.substring(0, Math.max(0, maxContentLength)) + ellipsis;
                 }
                 
                 embed.addFields({ 
                     name: '📋 Request Details', 
-                    value: `>>> ${finalPreview}`, 
+                    value: `${prefix}${finalPreview}`, 
                     inline: false 
                 });
             }

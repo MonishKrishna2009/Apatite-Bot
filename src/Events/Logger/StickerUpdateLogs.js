@@ -47,12 +47,9 @@ class StickerUpdateLogs extends Event {
             const guild = newStickers.first()?.guild || oldStickers.first()?.guild;
             if (!guild) return;
 
-            // Get who updated the stickers from audit logs
-            const auditEntry = await logManager.getAuditLogEntry(guild, AuditLogEvent.StickerCreate);
-
             // Helper: build footer with executor if exists
-            const setExecutorFooter = (embed) => {
-                if (auditEntry) {
+            const setExecutorFooter = (embed, auditEntry) => {
+                if (auditEntry?.executor) {
                     embed.setFooter({
                         text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
                         iconURL: auditEntry.executor.displayAvatarURL()
@@ -68,6 +65,9 @@ class StickerUpdateLogs extends Event {
             // Check for added stickers
             const addedStickers = newStickers.filter(sticker => !oldStickers.has(sticker.id));
             if (addedStickers.size > 0) {
+                // Get audit entry for sticker creation
+                const auditEntry = await logManager.getAuditLogEntry(guild, AuditLogEvent.StickerCreate);
+                
                 let description = `>>> **Added Stickers**: ${addedStickers.size}\n`;
                 
                 // Show first few stickers
@@ -88,7 +88,7 @@ class StickerUpdateLogs extends Event {
                     description
                 );
 
-                setExecutorFooter(embed);
+                setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
@@ -96,6 +96,9 @@ class StickerUpdateLogs extends Event {
             // Check for removed stickers
             const removedStickers = oldStickers.filter(sticker => !newStickers.has(sticker.id));
             if (removedStickers.size > 0) {
+                // Get audit entry for sticker deletion
+                const auditEntry = await logManager.getAuditLogEntry(guild, AuditLogEvent.StickerDelete);
+                
                 let description = `>>> **Removed Stickers**: ${removedStickers.size}\n`;
                 
                 // Show first few sticker names
@@ -116,7 +119,7 @@ class StickerUpdateLogs extends Event {
                     description
                 );
 
-                setExecutorFooter(embed);
+                setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
@@ -128,6 +131,9 @@ class StickerUpdateLogs extends Event {
             });
 
             if (updatedStickers.size > 0) {
+                // Get audit entry for sticker update
+                const auditEntry = await logManager.getAuditLogEntry(guild, AuditLogEvent.StickerUpdate);
+                
                 let description = `>>> **Updated Stickers**: ${updatedStickers.size}\n`;
                 
                 // Show first few sticker updates
@@ -159,7 +165,7 @@ class StickerUpdateLogs extends Event {
                     description
                 );
 
-                setExecutorFooter(embed);
+                setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }

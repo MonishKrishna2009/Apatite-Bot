@@ -40,7 +40,8 @@ const {
   cleanupRequests,
   getStatusColor,
   getStatusEmoji,
-  softDeleteRequest
+  softDeleteRequest,
+  normalizeStatus
 } = require("../../Structure/Functions/LFSystem/lfHelpers");
 const { getGameChannels, logLFAction } = require("../../Structure/Functions/LFSystem/lfActionLogger");
 const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
@@ -433,7 +434,7 @@ class LFTStaff extends Command {
 
         // Build query
         const query = { guildId: interaction.guild.id };
-        if (status) query.status = status;
+        if (status) query.status = normalizeStatus(status);
         if (type) query.type = type;
         if (game) query.game = game.toLowerCase();
         if (user) query.userId = user.id;
@@ -1503,7 +1504,7 @@ class LFTStaff extends Command {
             guildId: interaction.guild.id,
             userId: target.id 
         };
-        if (status !== "all") query.status = status;
+        if (status !== "all") query.status = normalizeStatus(status);
 
         const requests = await LFRequest.find(query)
             .sort({ createdAt: -1 })

@@ -51,7 +51,7 @@ class InviteCreateLogs extends Event {
 
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
-                if (auditEntry) {
+                if (auditEntry && auditEntry.executor) {
                     embed.setFooter({
                         text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
                         iconURL: auditEntry.executor.displayAvatarURL()

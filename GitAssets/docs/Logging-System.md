@@ -3,11 +3,10 @@
 The logging system tracks Discord server events and provides audit trails for moderation and compliance. It handles everything from message changes to member activities with privacy controls built-in.
 
 > [!IMPORTANT]
-> **Privacy & Compliance**: This logging system is designed with privacy-first principles. All data collection, processing, and retention follows strict privacy
-> controls and compliance requirements. Review the [Data Retention Policy](../README.md#data-retention-policy) before configuration.
+> **Privacy & Compliance**: This logging system is designed with privacy-first principles. All data collection, processing, and retention follows strict privacy controls and compliance requirements. Review the [Data Retention Policy](../README.md#data-retention-policy) before configuration.
 
 > [!INFO]
-> **Recent Updates**: The logging system has been enhanced with reduced verbosity, better error handling, and improved config compatibility. DataCleanupManager now only logs initialization and completion with comprehensive stats.
+> **Recent Updates**: The logging system has been enhanced with better error handling, and improved config compatibility. DataCleanupManager now only logs initialization and completion with comprehensive stats.
 
 ## ✨ Features
 
@@ -125,6 +124,7 @@ flowchart TD
 | **WebhookUpdate** | `WebhookUpdateLogs.js` | Webhook configuration changes | Metadata-only |
 | **EmojiUpdate** | `EmojiUpdateLogs.js` | Server emoji changes | Metadata-only |
 | **StickerUpdate** | `StickerUpdateLogs.js` | Server sticker changes | Metadata-only |
+
 ### **Privacy Classification**
 - **Content-based**: Full message content may be logged (opt-in only)
 - **Metadata-only**: Only event metadata and user information (default)
@@ -408,7 +408,7 @@ All log entries use professional Discord embeds with:
 ### Example Log Entries
 
 #### Member Join
-```
+```text
 🟢 Member Joined
 >>> Member: Username#1234 (123456789)
 Account Age: 2 years, 3 months
@@ -416,7 +416,7 @@ Server Member Count: 1,234
 ```
 
 #### Message Deletion
-```
+```text
 🔴 Message Deleted
 >>> Author: Username#1234 (123456789)
 Channel: #general (123456789)
@@ -425,7 +425,7 @@ Content: [Message content preserved]
 ```
 
 #### Channel Creation
-```
+```text
 🟢 Channel Created
 >>> Channel: #new-channel (123456789)
 Type: Text Channel

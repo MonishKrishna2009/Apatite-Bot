@@ -95,7 +95,8 @@ function validateChannelId(channelId) {
  * @returns {boolean} `true` if `messageId` is null/undefined or a string of 17–20 digits, `false` otherwise.
  */
 function validateMessageId(messageId) {
-    if (!messageId) return true; // Null/undefined is valid
+    if (messageId == null) return true; // Null/undefined is valid
+    if (messageId === '') return false; // Empty string is invalid
     if (typeof messageId !== 'string') return false;
     return /^\d{17,20}$/.test(messageId);
 }

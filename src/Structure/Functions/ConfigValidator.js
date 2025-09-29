@@ -23,18 +23,45 @@
  * @throws {Error} If retention periods are misconfigured
  */
 function validateRetentionPeriods(config) {
+    // Validate field existence and type for RequestExpiryDays
+    if (!('RequestExpiryDays' in config)) {
+        throw new Error('Missing required configuration field: RequestExpiryDays');
+    }
+    const expiryDays = Number(config.RequestExpiryDays);
+    if (!Number.isFinite(expiryDays) || expiryDays < 0) {
+        throw new Error(`Invalid RequestExpiryDays: must be a finite non-negative number, got ${config.RequestExpiryDays}`);
+    }
+    
+    // Validate field existence and type for RequestArchiveDays
+    if (!('RequestArchiveDays' in config)) {
+        throw new Error('Missing required configuration field: RequestArchiveDays');
+    }
+    const archiveDays = Number(config.RequestArchiveDays);
+    if (!Number.isFinite(archiveDays) || archiveDays < 0) {
+        throw new Error(`Invalid RequestArchiveDays: must be a finite non-negative number, got ${config.RequestArchiveDays}`);
+    }
+    
+    // Validate field existence and type for RequestDeleteDays
+    if (!('RequestDeleteDays' in config)) {
+        throw new Error('Missing required configuration field: RequestDeleteDays');
+    }
+    const deleteDays = Number(config.RequestDeleteDays);
+    if (!Number.isFinite(deleteDays) || deleteDays < 0) {
+        throw new Error(`Invalid RequestDeleteDays: must be a finite non-negative number, got ${config.RequestDeleteDays}`);
+    }
+    
     // Validate RequestExpiryDays < RequestArchiveDays
-    if (config.RequestExpiryDays >= config.RequestArchiveDays) {
+    if (expiryDays >= archiveDays) {
         throw new Error(
-            `Invalid retention configuration: RequestExpiryDays (${config.RequestExpiryDays}) must be less than RequestArchiveDays (${config.RequestArchiveDays}). ` +
+            `Invalid retention configuration: RequestExpiryDays (${expiryDays}) must be less than RequestArchiveDays (${archiveDays}). ` +
             `Requests must expire before they can be archived.`
         );
     }
     
     // Validate RequestArchiveDays < RequestDeleteDays
-    if (config.RequestArchiveDays >= config.RequestDeleteDays) {
+    if (archiveDays >= deleteDays) {
         throw new Error(
-            `Invalid retention configuration: RequestArchiveDays (${config.RequestArchiveDays}) must be less than RequestDeleteDays (${config.RequestDeleteDays}). ` +
+            `Invalid retention configuration: RequestArchiveDays (${archiveDays}) must be less than RequestDeleteDays (${deleteDays}). ` +
             `Requests must be archived before they can be permanently deleted.`
         );
     }

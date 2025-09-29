@@ -189,7 +189,7 @@ class DataCleanupManager {
      */
     async cleanupDiscordMessageLogs() {
         try {
-            const retentionDays = config.logging?.retentionDays?.fullContent || 30;
+            const retentionDays = config.logging?.retentionDays?.fullContent ?? 30;
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -216,7 +216,7 @@ class DataCleanupManager {
      */
     async cleanupDiscordMetadataLogs() {
         try {
-            const retentionDays = config.logging?.retentionDays?.metadata || 365;
+            const retentionDays = config.logging?.retentionDays?.metadata ?? 365;
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -255,7 +255,7 @@ class DataCleanupManager {
      */
     async cleanupDiscordAuditLogs() {
         try {
-            const retentionDays = config.logging?.retentionDays?.auditLogs || 2555; // 7 years
+            const retentionDays = config.logging?.retentionDays?.auditLogs ?? 2555; // 7 years
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -287,7 +287,7 @@ class DataCleanupManager {
      */
     async cleanupDatabaseAnalytics() {
         try {
-            const retentionDays = config.logging?.privacyControls?.analytics?.retentionDays || 90;
+            const retentionDays = config.logging?.privacyControls?.analytics?.retentionDays ?? 90;
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -785,10 +785,10 @@ class DataCleanupManager {
                 totalDeleted: (stats.messageLogs || 0) + (stats.metadataLogs || 0) + 
                              (stats.auditLogs || 0) + (stats.analyticsData || 0),
                 retentionPolicies: {
-                    fullContent: config.logging?.retentionDays?.fullContent || 30,
-                    metadata: config.logging?.retentionDays?.metadata || 365,
-                    auditLogs: config.logging?.retentionDays?.auditLogs || 2555,
-                    analytics: config.logging?.privacyControls?.analytics?.retentionDays || 90
+                    fullContent: config.logging?.retentionDays?.fullContent ?? 30,
+                    metadata: config.logging?.retentionDays?.metadata ?? 365,
+                    auditLogs: config.logging?.retentionDays?.auditLogs ?? 2555,
+                    analytics: config.logging?.privacyControls?.analytics?.retentionDays ?? 90
                 },
                 performance: {
                     duration: stats.duration || 0,
@@ -849,10 +849,10 @@ class DataCleanupManager {
             databaseTrackingEnabled: this.databaseTrackingEnabled,
             statistics: this.cleanupStats,
             retentionPolicies: {
-                fullContent: config.logging?.retentionDays?.fullContent || 30,
-                metadata: config.logging?.retentionDays?.metadata || 365,
-                auditLogs: config.logging?.retentionDays?.auditLogs || 2555,
-                analytics: config.logging?.privacyControls?.analytics?.retentionDays || 90
+                fullContent: config.logging?.retentionDays?.fullContent ?? 30,
+                metadata: config.logging?.retentionDays?.metadata ?? 365,
+                auditLogs: config.logging?.retentionDays?.auditLogs ?? 2555,
+                analytics: config.logging?.privacyControls?.analytics?.retentionDays ?? 90
             }
         };
     }
@@ -976,10 +976,10 @@ class DataCleanupManager {
                     memoryFailures: this.cleanupStats.failedDeletions.length
                 },
                 retention: {
-                    fullContent: config.logging?.retentionDays?.fullContent || 30,
-                    metadata: config.logging?.retentionDays?.metadata || 365,
-                    auditLogs: config.logging?.retentionDays?.auditLogs || 2555,
-                    analytics: config.logging?.privacyControls?.analytics?.retentionDays || 90
+                    fullContent: config.logging?.retentionDays?.fullContent ?? 30,
+                    metadata: config.logging?.retentionDays?.metadata ?? 365,
+                    auditLogs: config.logging?.retentionDays?.auditLogs ?? 2555,
+                    analytics: config.logging?.privacyControls?.analytics?.retentionDays ?? 90
                 },
                 recentCleanups: recentCleanups,
                 failures: this.cleanupStats.failedDeletions.slice(-10) // Last 10 memory failures
@@ -1013,10 +1013,10 @@ class DataCleanupManager {
                 pendingRetries: this.cleanupStats.failedDeletions.length
             },
             retention: {
-                fullContent: config.logging?.retentionDays?.fullContent || 30,
-                metadata: config.logging?.retentionDays?.metadata || 365,
-                auditLogs: config.logging?.retentionDays?.auditLogs || 2555,
-                analytics: config.logging?.privacyControls?.analytics?.retentionDays || 90
+                fullContent: config.logging?.retentionDays?.fullContent ?? 30,
+                metadata: config.logging?.retentionDays?.metadata ?? 365,
+                auditLogs: config.logging?.retentionDays?.auditLogs ?? 2555,
+                analytics: config.logging?.privacyControls?.analytics?.retentionDays ?? 90
             },
             failures: this.cleanupStats.failedDeletions.slice(-10)
         };
@@ -1050,7 +1050,7 @@ class DataCleanupManager {
      */
     validateRetentionPolicies() {
         const issues = [];
-        const retentionDays = config.logging?.retentionDays || {};
+        const retentionDays = config.logging?.retentionDays ?? {};
         
         if (!retentionDays.fullContent || retentionDays.fullContent < 1) {
             issues.push('Full content retention must be at least 1 day');

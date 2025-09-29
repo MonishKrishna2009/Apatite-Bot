@@ -129,6 +129,10 @@ module.exports = {
             auditLogs: 2555       // Audit logs - 7 years for compliance requirements
         },
         
+        // IMPORTANT: Zero-day retention is supported - use 0 for immediate deletion
+        // The DataCleanupManager uses nullish coalescing (??) instead of logical OR (||)
+        // This means explicit 0 values are honored, not treated as falsy defaults
+        
         // ========================================================================
         // DATA PROTECTION SETTINGS
         // ========================================================================

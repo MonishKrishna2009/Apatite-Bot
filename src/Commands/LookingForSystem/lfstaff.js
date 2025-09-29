@@ -1204,7 +1204,7 @@ class LFTStaff extends Command {
             : type === "expire"
             ? "⏰ Expiry cleanup completed - old pending requests have been expired"
             : type === "delete"
-            ? "🗑️ Deletion cleanup completed - old soft-deleted requests (archived, expired, cancelled) have been permanently deleted"
+            ? "🗑️ Deletion cleanup completed - old soft-deleted requests (archived, expired, cancelled, deleted) have been permanently deleted"
             : "📁 Archive cleanup completed - old approved requests have been archived";
 
         embed.addFields({
@@ -1254,7 +1254,7 @@ class LFTStaff extends Command {
             deleteDate.setDate(deleteDate.getDate() - config.RequestDeleteDays);
             const deleteQuery = {
                 ...query,
-                status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED] },
+                status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED, STATUS.DELETED] },
                 createdAt: { $lt: deleteDate }
             };
             const wouldDelete = await LFRequest.countDocuments(deleteQuery);
@@ -1278,7 +1278,7 @@ class LFTStaff extends Command {
 
                 const deleteCount = await LFRequest.countDocuments({
                     ...typeQuery,
-                    status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED] },
+                    status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED, STATUS.DELETED] },
                     createdAt: { $lt: deleteDate }
                 });
 
@@ -1408,12 +1408,12 @@ class LFTStaff extends Command {
         const deleteDate = new Date();
         deleteDate.setDate(deleteDate.getDate() - config.RequestDeleteDays);
         
-        // Find old soft-deleted requests (archived, expired, cancelled) that are older than the delete threshold
+        // Find old soft-deleted requests (archived, expired, cancelled, deleted) that are older than the delete threshold
         const oldSoftDeleted = await LFRequest.find({
             guildId: guild.id,
             type: gameType,
             game: gameKey,
-            status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED] },
+            status: { $in: [STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED, STATUS.DELETED] },
             createdAt: { $lt: deleteDate }
         });
 

@@ -90,7 +90,6 @@ class StickerUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
             // Check for removed stickers
@@ -121,7 +120,6 @@ class StickerUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
             // Check for updated stickers (name or description changes)
@@ -167,7 +165,6 @@ class StickerUpdateLogs extends Event {
 
                 setExecutorFooter(embed, auditEntry);
                 await logManager.sendPrivacyLog("serverLog", embed);
-                return;
             }
 
         } catch (error) {

@@ -92,7 +92,7 @@ class PrivacyUtils {
         // Remove suspicious patterns if enabled
         if (this.sanitizationConfig.removeSuspiciousPatterns) {
             // Remove potential command injections
-            sanitizedContent = sanitizedContent.replace(/[;&|`$(){}[\]]/g, '');
+            sanitizedContent = sanitizedContent.replace(/[;&|`$(){}\[\]]/g, '');
             
             // Remove potential SQL injection patterns
             sanitizedContent = sanitizedContent.replace(/(union|select|insert|delete|update|drop|create|alter|exec|execute)/gi, '[PATTERN_REMOVED]');

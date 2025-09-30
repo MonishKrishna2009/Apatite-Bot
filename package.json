@@ -20,10 +20,14 @@
     "license-check": "bun run scripts/license-compliance-check.js",
     "show-warranty": "echo 'This program comes with ABSOLUTELY NO WARRANTY; for details type show w.'",
     "show-conditions": "echo 'This is free software, and you are welcome to redistribute it under certain conditions; type show c for details.'",
-    "license-info": "echo 'Apatite Bot - Copyright (C) 2025 Monish Krishna - Licensed under GPL v3.0'"
+    "license-info": "echo 'Apatite Bot - Copyright (C) 2025 Monish Krishna - Licensed under GPL v3.0'",
+    "lint": "bun run oxlint src/",
+    "lint:fix": "bun run oxlint src/ --fix",
+    "lint:check": "bun run oxlint src/ --quiet"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "oxlint": "^1.19.0"
   },
   "peerDependencies": {
     "typescript": "^5"

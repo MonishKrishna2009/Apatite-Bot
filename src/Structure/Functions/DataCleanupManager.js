@@ -104,7 +104,7 @@ class DataCleanupManager {
             
             // Check if logging is enabled before proceeding
             if (!this.client.config?.logging?.enabled) {
-                return;
+                return 0;
             }
             
             const cleanupStats = {
@@ -543,6 +543,8 @@ class DataCleanupManager {
      * @returns {number} - Number of successfully retried deletions
      */
     async retryFailedDeletions() {
+        const maxRetries = 3; // Maximum number of retry attempts
+        
         try {
             const mongoose = require('mongoose');
             
@@ -555,7 +557,7 @@ class DataCleanupManager {
             // Get unresolved failed deletions from MongoDB
             const failedDeletions = await FailedDeletion.find({
                 resolved: false,
-                retryCount: { $lt: 3 } // Max 3 retries
+                retryCount: { $lt: maxRetries }
             }).limit(100); // Process in batches
 
             let totalRetryCount = 0;
@@ -593,13 +595,24 @@ class DataCleanupManager {
                         lastRetry: new Date()
                     };
 
-                    if (remainingMessageIds.length === 0) {
+                    // Check if retry limit will be reached after this attempt
+                    if (failure.retryCount + 1 >= maxRetries) {
+                        // Mark as resolved/escalated when retry budget is exhausted
+                        updateData.resolved = true;
+                        updateData.resolvedAt = new Date();
+                        updateData.escalated = true;
+                        updateData.escalationReason = `Retry limit exceeded (${maxRetries} attempts)`;
+                        updateData.messageIds = remainingMessageIds; // Keep remaining IDs for reference
+                        
+                        // Log escalation for monitoring
+                        this.logger.warn(`Failed deletion escalated after ${maxRetries} retries: ${failure.logType} - ${remainingMessageIds.length} messages still failed`);
+                    } else if (remainingMessageIds.length === 0) {
                         // All messages were successfully deleted
                         updateData.resolved = true;
                         updateData.resolvedAt = new Date();
                         updateData.messageIds = []; // Clear the array
                     } else {
-                        // Update with remaining message IDs
+                        // Update with remaining message IDs for next retry
                         updateData.messageIds = remainingMessageIds;
                     }
 
@@ -644,9 +657,7 @@ class DataCleanupManager {
         for (let i = this.cleanupStats.failedDeletions.length - 1; i >= 0; i--) {
             const failure = this.cleanupStats.failedDeletions[i];
             
-            // Increment retry count on every iteration to age entries
-            failure.retryCount++;
-            
+            // Check if this failure has already exceeded max retries
             if (failure.retryCount >= maxRetries) {
                 // Remove failures that have exceeded max retries
                 this.cleanupStats.failedDeletions.splice(i, 1);
@@ -673,17 +684,26 @@ class DataCleanupManager {
                     }
                 }
 
+                // Increment retry count AFTER attempting deletions
+                failure.retryCount++;
+
                 // Update failure with only the IDs that still failed
                 failure.messageIds = remainingMessageIds;
                 
-                // Remove failure entry if no more IDs to retry
-                if (remainingMessageIds.length === 0) {
+                // Remove failure entry if no more IDs to retry OR if max retries exceeded
+                if (remainingMessageIds.length === 0 || failure.retryCount >= maxRetries) {
                     this.cleanupStats.failedDeletions.splice(i, 1);
                 }
 
             } catch (error) {
                 this.logger.error(`Failed to retry memory deletions for ${failure.logType}: ${error.message}`);
-                // Keep the failure entry for next retry (retryCount already incremented above)
+                // Increment retry count even on error
+                failure.retryCount++;
+                
+                // Remove if max retries exceeded after error
+                if (failure.retryCount >= maxRetries) {
+                    this.cleanupStats.failedDeletions.splice(i, 1);
+                }
             }
         }
 

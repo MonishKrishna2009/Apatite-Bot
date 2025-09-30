@@ -644,6 +644,9 @@ class DataCleanupManager {
         for (let i = this.cleanupStats.failedDeletions.length - 1; i >= 0; i--) {
             const failure = this.cleanupStats.failedDeletions[i];
             
+            // Increment retry count on every iteration to age entries
+            failure.retryCount++;
+            
             if (failure.retryCount >= maxRetries) {
                 // Remove failures that have exceeded max retries
                 this.cleanupStats.failedDeletions.splice(i, 1);
@@ -657,32 +660,30 @@ class DataCleanupManager {
                     continue;
                 }
 
-                let successCount = 0;
+                const remainingMessageIds = [];
                 for (const messageId of failure.messageIds) {
                     try {
                         const message = await channel.messages.fetch(messageId);
                         await message.delete();
-                        successCount++;
                         retryCount++;
                     } catch (error) {
                         // Message might have been deleted manually or doesn't exist
-                        continue;
+                        // Keep this ID for next retry attempt
+                        remainingMessageIds.push(messageId);
                     }
                 }
 
-                if (successCount > 0) {
-                    failure.retryCount++;
-                        // Silent retry - only log completion stats
-                }
-
-                // Remove from retry list if all messages were handled
-                if (successCount === failure.messageIds.length) {
+                // Update failure with only the IDs that still failed
+                failure.messageIds = remainingMessageIds;
+                
+                // Remove failure entry if no more IDs to retry
+                if (remainingMessageIds.length === 0) {
                     this.cleanupStats.failedDeletions.splice(i, 1);
                 }
 
             } catch (error) {
                 this.logger.error(`Failed to retry memory deletions for ${failure.logType}: ${error.message}`);
-                failure.retryCount++;
+                // Keep the failure entry for next retry (retryCount already incremented above)
             }
         }
 

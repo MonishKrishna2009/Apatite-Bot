@@ -187,6 +187,11 @@ function validateRequestContent(content, gameType, game) {
     }
 
     // Check required fields
+    if (!Array.isArray(gameConfig.fields)) {
+        result.addError(`gameConfig.fields must be an array`);
+        return result;
+    }
+    
     for (const field of gameConfig.fields) {
         if (field.required) {
             const val = content[field.id];

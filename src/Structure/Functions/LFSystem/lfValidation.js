@@ -270,6 +270,11 @@ function validateMessageLimits(content = "", embeds = []) {
 
     // Check total message size (approximate)
     const totalSize = content.length + embeds.reduce((total, embed) => {
+        // Short-circuit for malformed embeds
+        if (!embed || typeof embed !== 'object' || !embed.data) {
+            return total; // Treat malformed embed as size 0
+        }
+        
         const data = embed.data;
         return total + 
             (data.title?.length || 0) + 

@@ -88,6 +88,7 @@ class DataCleanupManager {
 
     /**
      * Perform the main cleanup operation using hybrid approach
+     * @returns {Promise<number>} Total number of deleted records
      */
     async performCleanup() {
         const startTime = Date.now();
@@ -161,6 +162,8 @@ class DataCleanupManager {
             };
             this.logger.success(`Data cleanup completed: ${JSON.stringify(stats)}`);
             
+            return totalDeleted;
+            
         } catch (error) {
             this.cleanupStats.totalErrors++;
             this.logger.error(`Data cleanup failed: ${error.message}`);
@@ -180,6 +183,7 @@ class DataCleanupManager {
             };
             
             await this.storeCleanupStatistics(errorStats);
+            return 0; // Return 0 on error
         }
     }
 
@@ -859,6 +863,8 @@ class DataCleanupManager {
 
     /**
      * Manually trigger cleanup for specific data type using hybrid approach
+     * @param {string} dataType - Type of data to clean up
+     * @returns {Promise<number>} Number of deleted records
      */
     async manualCleanup(dataType) {
         try {
@@ -893,8 +899,7 @@ class DataCleanupManager {
                     deletedCount = await this.cleanupDatabaseAnalytics();
                     break;
                 case 'all':
-                    await this.performCleanup();
-                    deletedCount = 'All data types cleaned using hybrid approach';
+                    deletedCount = await this.performCleanup();
                     break;
                 default:
                     throw new Error(`Unknown data type: ${dataType}. Available: messageLogs, metadataLogs, auditLogs, analyticsData, failedDeletions, discord, database, all`);
@@ -1052,21 +1057,21 @@ class DataCleanupManager {
         const issues = [];
         const retentionDays = config.logging?.retentionDays ?? {};
         
-        if (!retentionDays.fullContent || retentionDays.fullContent < 1) {
-            issues.push('Full content retention must be at least 1 day');
+        if (retentionDays.fullContent == null || retentionDays.fullContent < 0) {
+            issues.push('Full content retention must be a non-negative number (0 allowed for immediate deletion)');
         }
         
-        if (!retentionDays.metadata || retentionDays.metadata < 1) {
-            issues.push('Metadata retention must be at least 1 day');
+        if (retentionDays.metadata == null || retentionDays.metadata < 0) {
+            issues.push('Metadata retention must be a non-negative number (0 allowed for immediate deletion)');
         }
         
-        if (!retentionDays.auditLogs || retentionDays.auditLogs < 365) {
-            issues.push('Audit logs retention must be at least 1 year for compliance');
+        if (retentionDays.auditLogs == null || retentionDays.auditLogs < 0) {
+            issues.push('Audit logs retention must be a non-negative number (0 allowed for immediate deletion)');
         }
         
         const analyticsRetention = config.logging?.privacyControls?.analytics?.retentionDays;
-        if (analyticsRetention && analyticsRetention < 1) {
-            issues.push('Analytics retention must be at least 1 day');
+        if (analyticsRetention != null && analyticsRetention < 0) {
+            issues.push('Analytics retention must be a non-negative number (0 allowed for immediate deletion)');
         }
 
         if (issues.length > 0) {

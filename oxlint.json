@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "eslint/no-unused-vars": "warn",
+    "eslint/no-useless-escape": "warn"
+  },
+  "ignore": [
+    "node_modules/**",
+    "*.min.js",
+    "dist/**",
+    "build/**"
+  ],
+  "include": [
+    "src/**/*.js",
+    "*.js"
+  ]
+}

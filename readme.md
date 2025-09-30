@@ -34,6 +34,8 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 
 
 ## ✨ Features 
+> [!CAUTION]
+> Most of the documentation is AI-generated. While it has been reviewed by a human, some errors may still be present. If you notice any, please open an issue or submit a pull request.
 
 - 👥 **LFP / LFT System** ✅
   - **Multi-game Support**: Valorant, CS2, League of Legends (easily extensible)
@@ -190,7 +192,7 @@ LF_MOD_ROLE_ID = ""
 ```
 3. Run
 ```bash
-bun .
+bun index.js
 ```
 > [!WARNING]
 > Never commit your `.env` file. It contains sensitive tokens.

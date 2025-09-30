@@ -31,45 +31,76 @@ class MessageEdit extends Event {
     async execute(oldMessage, newMessage) {
         const { client } = this;
         const logManager = client.logManager;
-        if (client.config.logging !== true) return;
+        
+        // Check if logging is enabled - compatible with both boolean and object configs
+        if (!(client.config.logging?.enabled ?? client.config.logging)) return;
+        
         try {
             // Ignore if content didn't change (e.g., embed update)
             if (oldMessage.content === newMessage.content) return;
+            
             // Ignore bots
             if (newMessage.author?.bot) return;
+            
+            // Skip if no guild (DMs, etc.)
+            if (!newMessage.guild) return;
+            
             const member = newMessage.member || oldMessage.member;
-            // Get who made the change from audit logs (if available)
-            const auditEntry = await logManager.getAuditLogEntry(newMessage.guild, AuditLogEvent.MessageUpdate);
-            // Helper: build footer with executor if exists
+            if (!member) return; // Skip if member not available
+            
+            // Skip if logManager is not available
+            if (!logManager) {
+                logger.warn('LogManager not available for message edit log');
+                return;
+            }
+            
+            // Check if content should be logged based on privacy settings
+            const shouldLogContent = logManager.shouldLogContent(newMessage.channel.id, newMessage.channel.type);
+            
+            // Helper: build footer with message author
             const setExecutorFooter = (embed) => {
-                if (auditEntry) {
-                    embed.setFooter({
-                        text: `${auditEntry.executor.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: auditEntry.executor.displayAvatarURL()
-                    });
-                } else {
-                    embed.setFooter({
-                        text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
-                        iconURL: member.user.displayAvatarURL()
-                    });
-                }
+                embed.setFooter({
+                    text: `${member.user.tag} • ${new Date().toLocaleTimeString()}`,
+                    iconURL: member.user.displayAvatarURL()
+                });
                 return embed;
             };
 
-            // ---------------- MESSAGE EDIT ----------------
+            // Create privacy-aware embed for message edit
+            let description = `>>> **Author**: ${member} (\`${member.id}\`)\n` +
+                `**Channel**: ${newMessage.channel} (\`${newMessage.channel.id}\`)\n` +
+                `**Message ID**: \`${newMessage.id}\`\n\n`;
+
+            if (shouldLogContent) {
+                // Process old and new content with privacy controls
+                const oldProcessed = logManager.processMessageContent(oldMessage.content, {
+                    fullContentLogging: true
+                });
+                const newProcessed = logManager.processMessageContent(newMessage.content, {
+                    fullContentLogging: true
+                });
+                
+                description += `**Old Message**:\n${oldProcessed.content}\n\n` +
+                    `**New Message**:\n${newProcessed.content}`;
+                
+                // Add privacy notice if content was processed
+                if (oldProcessed.redacted || oldProcessed.sanitized || newProcessed.redacted || newProcessed.sanitized) {
+                    description += `\n\n> *Privacy Notice: Content processed for privacy protection*`;
+                }
+            } else {
+                description += `**Old Message**: [CONTENT_NOT_LOGGED_FOR_PRIVACY]\n\n` +
+                    `**New Message**: [CONTENT_NOT_LOGGED_FOR_PRIVACY]`;
+            }
+
             const embed = logManager.createLogEmbed(
                 "MESSAGE_UPDATE",
                 0xfaa61a,
                 "**Message edited**",
-                `>>> **Author**: ${member} (\`${member.id}\`)\n` +
-                `**Channel**: ${newMessage.channel} (\`${newMessage.channel.id}\`)\n` +
-                `**Message ID**: \`${newMessage.id}\`\n\n` +
-                `**Old Message**:\n${oldMessage.content || "*No content*"}\n\n` +
-                `**New Message**:\n${newMessage.content || "*No content*"}`
+                description
             );
 
             setExecutorFooter(embed);
-            await logManager.sendLog("messageLog", embed);
+            await logManager.sendPrivacyLog("messageLog", embed);
         } catch (error) {
             logger.error(error);
         }

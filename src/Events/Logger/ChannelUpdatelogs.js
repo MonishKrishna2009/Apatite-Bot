@@ -33,9 +33,18 @@ class ChannelLogs extends Event {
         const { client } = this;
         const logManager = client.logManager;
 
-        if (client.config.logging !== true) return;
+        // Check if logging is enabled - compatible with both boolean and object configs
+        if (!(client.config.logging?.enabled ?? client.config.logging)) return;
 
         try {
+            // Skip if logManager is not available
+            if (!logManager) {
+                logger.warn('LogManager not available for channel update log');
+                return;
+            }
+            
+            // Skip if no guild (shouldn't happen but safety check)
+            if (!newChannel.guild) return;
             // Get who made the change from audit logs
             const auditEntry = await logManager.getAuditLogEntry(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
 
@@ -62,7 +71,7 @@ class ChannelLogs extends Event {
                 );
 
                 setExecutorFooter(embed);
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
 
@@ -78,7 +87,7 @@ class ChannelLogs extends Event {
                 );
 
                 setExecutorFooter(embed);
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
 
@@ -94,7 +103,7 @@ class ChannelLogs extends Event {
                 );
 
                 setExecutorFooter(embed);
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
 
@@ -110,7 +119,7 @@ class ChannelLogs extends Event {
                 );
 
                 setExecutorFooter(embed);
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
 
@@ -126,7 +135,7 @@ class ChannelLogs extends Event {
                 );
 
                 setExecutorFooter(embed);
-                await logManager.sendLog("serverLog", embed);
+                await logManager.sendPrivacyLog("serverLog", embed);
                 return;
             }
 

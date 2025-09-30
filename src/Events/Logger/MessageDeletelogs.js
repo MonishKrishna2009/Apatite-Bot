@@ -31,13 +31,32 @@ class MessageDelete extends Event {
     async execute(message) {
         const { client } = this;
         const logManager = client.logManager;
-        if (client.config.logging !== true) return;
+        
+        // Check if logging is enabled - compatible with both boolean and object configs
+        if (!(client.config.logging?.enabled ?? client.config.logging)) return;
+        
         try {
             // Ignore bots
             if (message.author?.bot) return;
+            
+            // Skip if no guild (DMs, etc.)
+            if (!message.guild) return;
+            
             const member = message.member;
+            if (!member) return; // Skip if member not available
+            
+            // Skip if logManager is not available
+            if (!logManager) {
+                logger.warn('LogManager not available for message delete log');
+                return;
+            }
+            
+            // Check if content should be logged based on privacy settings
+            const shouldLogContent = logManager.shouldLogContent(message.channel.id, message.channel.type);
+            
             // Get who made the change from audit logs (if available)
             const auditEntry = await logManager.getAuditLogEntry(message.guild, AuditLogEvent.MessageDelete);
+            
             // Helper: build footer with executor if exists
             const setExecutorFooter = (embed) => {
                 if (auditEntry) {
@@ -53,19 +72,23 @@ class MessageDelete extends Event {
                 }
                 return embed;
             };
-            // ---------------- MESSAGE DELETE ----------------
-            const embed = logManager.createLogEmbed(
+
+            // Create privacy-aware embed
+            const embed = logManager.createMessageLogEmbed(
                 "MESSAGE_DELETE",
                 0xed4245,
                 "**Message deleted**",
-                `>>> **Author**: ${member} (\`${member.id}\`)\n` +
-                `**Channel**: ${message.channel} (\`${message.channel.id}\`)\n` +
-                `**Message ID**: \`${message.id}\`\n\n` +
-                `**Content**:\n${message.content || "*No content*"}`
+                { content: message.content },
+                {
+                    includeContent: shouldLogContent,
+                    channel: message.channel,
+                    author: member.user,
+                    messageId: message.id
+                }
             );
 
             setExecutorFooter(embed);
-            await logManager.sendLog("messageLog", embed);
+            await logManager.sendPrivacyLog("messageLog", embed);
         } catch (error) {
             logger.error(error);
         }

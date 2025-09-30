@@ -48,13 +48,56 @@ const ALLOWED_TRANSITIONS = {
 };
 
 /**
- * Check if a status transition is allowed
- * @param {string} fromStatus - Current status
- * @param {string} toStatus - Target status
- * @returns {boolean} - Whether transition is allowed
+ * Determine whether a transition from one status to another is permitted.
+ *
+ * Checks the configured allowed transitions and returns `false` if either input is falsy.
+ * @param {string} fromStatus - Current status (one of the defined STATUS values).
+ * @param {string} toStatus - Desired target status (one of the defined STATUS values).
+ * @returns {boolean} `true` if the transition from `fromStatus` to `toStatus` is allowed, `false` otherwise.
  */
 function isStatusTransitionAllowed(fromStatus, toStatus) {
-    return ALLOWED_TRANSITIONS[fromStatus]?.includes(toStatus) || false;
+    if (!fromStatus || !toStatus) return false;
+    const normalizedFromStatus = normalizeStatus(fromStatus);
+    const normalizedToStatus = normalizeStatus(toStatus);
+    return ALLOWED_TRANSITIONS[normalizedFromStatus]?.includes(normalizedToStatus) || false;
+}
+
+/**
+ * Check whether a status string is one of the defined STATUS values.
+ * @param {string} status - The status string to check (must match a value in `STATUS`).
+ * @returns {boolean} `true` if `status` matches one of the defined `STATUS` values, `false` otherwise.
+ */
+function isValidStatus(status) {
+    const normalizedStatus = normalizeStatus(status);
+    return Object.values(STATUS).includes(normalizedStatus);
+}
+
+/**
+ * Normalize a status string to lowercase.
+ * @param {string} status - The status string to normalize.
+ * @returns {string|null} The lowercase status string, or `null` if the input is falsy.
+ */
+function normalizeStatus(status) {
+    if (!status) return null;
+    return status.toLowerCase();
+}
+
+/**
+ * Determine whether the given status is considered active.
+ * @param {string} status - Status value to evaluate (case-insensitive).
+ * @returns {boolean} `true` if the status is pending or approved, `false` otherwise.
+ */
+function isActiveStatus(status) {
+    return [STATUS.PENDING, STATUS.APPROVED].includes(normalizeStatus(status));
+}
+
+/**
+ * Determines whether a status is considered soft-deleted.
+ * @param {string} status - Status to check.
+ * @returns {boolean} `true` if the status is one of declined, archived, expired, or cancelled; `false` otherwise.
+ */
+function isSoftDeletedStatus(status) {
+    return [STATUS.DECLINED, STATUS.ARCHIVED, STATUS.EXPIRED, STATUS.CANCELLED].includes(normalizeStatus(status));
 }
 
 /**
@@ -63,6 +106,7 @@ function isStatusTransitionAllowed(fromStatus, toStatus) {
  * @returns {Colors} - Discord color
  */
 function getStatusColor(status) {
+    const normalizedStatus = normalizeStatus(status);
     const colorMap = {
         [STATUS.PENDING]: Colors.Yellow,
         [STATUS.APPROVED]: Colors.Green,
@@ -72,7 +116,7 @@ function getStatusColor(status) {
         [STATUS.CANCELLED]: Colors.Blue,
         [STATUS.DELETED]: Colors.DarkGrey
     };
-    return colorMap[status] || Colors.Grey;
+    return colorMap[normalizedStatus] || Colors.Grey;
 }
 
 /**
@@ -81,6 +125,7 @@ function getStatusColor(status) {
  * @returns {string} - Emoji string
  */
 function getStatusEmoji(status) {
+    const normalizedStatus = normalizeStatus(status);
     const emojiMap = {
         [STATUS.PENDING]: "⏳",
         [STATUS.APPROVED]: "✅",
@@ -90,7 +135,7 @@ function getStatusEmoji(status) {
         [STATUS.CANCELLED]: "🚫",
         [STATUS.DELETED]: "🗑️"
     };
-    return emojiMap[status] || "❓";
+    return emojiMap[normalizedStatus] || "❓";
 }
 
 /**
@@ -259,9 +304,12 @@ async function softDeleteRequest(requestId, guildId) {
 }
 
 /**
- * Get request preview text for lists
- * @param {Object} request - LFRequest document
- * @returns {string} - Formatted preview text
+ * Build a compact, human-readable preview string for a request suitable for lists.
+ *
+ * The preview includes the request type, game, status (with emoji), relative creation time,
+ * a primary content field (teamName, riotID, lookingFor, or the first content value), and the request ID.
+ * @param {Object} request - LFRequest-like document containing at least `type`, `game`, `status`, `createdAt`, `content`, and `_id`.
+ * @returns {string} Formatted single-string preview for display in lists.
  */
 function getRequestPreview(request) {
     const createdAt = Math.floor(new Date(request.createdAt).getTime() / 1000);
@@ -277,13 +325,18 @@ function getRequestPreview(request) {
 }
 
 /**
- * Clean up expired and archived requests
- * @param {Object} guild - Discord guild object
- * @param {string} userId - User ID
- * @param {string} type - Request type (LFP or LFT)
- * @param {string} publicChannelId - Public channel ID
- * @param {Object} config - Configuration object
- * @returns {Object} - Cleanup results
+ * Perform expiration and archival cleanup of LookingFor requests for a guild and optional user.
+ *
+ * Expires pending requests whose `expiresAt` is before now, and archives approved requests older than `config.RequestArchiveDays`. When archiving, attempts to delete the request's public message (if any), sets status to `ARCHIVED`, records `archivedAt`, and clears `publicMessageId`.
+ * @param {Object} guild - Discord guild object whose requests will be cleaned.
+ * @param {string|null} userId - If provided, restrict cleanup to this user's requests; pass `null` to operate on all users.
+ * @param {string} type - Request type to target (e.g., `"LFP"` or `"LFT"`).
+ * @param {string} publicChannelId - Legacy channel ID parameter (not used for game-specific channel resolution).
+ * @param {Object} config - Configuration containing `RequestArchiveDays` (days before approved requests are archived). `RequestExpiryDays` is available in config but expiration uses each request's `expiresAt`.
+ * @returns {Object} Results of the operation containing:
+ *  - `{number} expired` — count of requests transitioned to `EXPIRED`.
+ *  - `{number} archived` — count of requests transitioned to `ARCHIVED`.
+ *  - `{string[]} errors` — list of error messages encountered during cleanup.
  */
 async function cleanupRequests(guild, userId, type, publicChannelId, config) {
     const results = {
@@ -293,47 +346,74 @@ async function cleanupRequests(guild, userId, type, publicChannelId, config) {
     };
 
     try {
-        // Expire old pending requests
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() - config.RequestExpiryDays);
+        // Log cleanup start
+        const scope = userId ? `user ${userId}` : 'all users';
+        logger.info(`Starting cleanup for ${scope} in guild ${guild.id} (${type})`);
+
+        // Expire old pending requests (using expiresAt field)
+        const now = new Date();
+
+        // Build query conditionally based on userId
+        const expireQuery = {
+            guildId: guild.id,
+            type,
+            status: STATUS.PENDING,
+            expiresAt: { $lt: now }
+        };
+        
+        // Only add userId filter if userId is provided (not null)
+        if (userId !== null) {
+            expireQuery.userId = userId;
+        }
 
         const expiredResult = await LFRequest.updateMany(
-            {
-                userId,
-                guildId: guild.id,
-                type,
-                status: STATUS.PENDING,
-                createdAt: { $lt: expiryDate }
-            },
+            expireQuery,
             { 
                 $set: { 
-                    status: STATUS.EXPIRED, 
-                    expiresAt: new Date()
+                    status: STATUS.EXPIRED
                 } 
             }
         );
         results.expired = expiredResult.modifiedCount;
+        
+        // Log expiry results
+        if (results.expired > 0) {
+            logger.info(`Expired ${results.expired} pending requests for ${scope} in guild ${guild.id} (${type})`);
+        }
 
         // Archive old approved requests
         const archiveDate = new Date();
         archiveDate.setDate(archiveDate.getDate() - config.RequestArchiveDays);
 
-        const oldApproved = await LFRequest.find({
-            userId,
+        // Build query conditionally based on userId
+        const archiveQuery = {
             guildId: guild.id,
             type,
             status: STATUS.APPROVED,
             createdAt: { $lt: archiveDate }
-        });
+        };
+        
+        // Only add userId filter if userId is provided (not null)
+        if (userId !== null) {
+            archiveQuery.userId = userId;
+        }
+
+        const oldApproved = await LFRequest.find(archiveQuery);
 
         for (const req of oldApproved) {
             try {
                 // Delete public message if it exists
                 if (req.publicMessageId) {
-                    const publicChannel = guild.channels.cache.get(publicChannelId);
-                    if (publicChannel) {
-                        const msg = await publicChannel.messages.fetch(req.publicMessageId).catch(() => null);
-                        if (msg) await msg.delete();
+                    const { getGameChannels } = require("./lfActionLogger");
+                    const channels = getGameChannels(config, req.game);
+                    
+                    // Check if channels configuration exists and has publicChannelId
+                    if (channels && channels.publicChannelId) {
+                        const publicChannel = guild.channels.cache.get(channels.publicChannelId);
+                        if (publicChannel) {
+                            const msg = await publicChannel.messages.fetch(req.publicMessageId).catch(() => null);
+                            if (msg) await msg.delete();
+                        }
                     }
                 }
 
@@ -348,9 +428,100 @@ async function cleanupRequests(guild, userId, type, publicChannelId, config) {
                 results.errors.push(`Failed to archive request ${req._id}: ${error.message}`);
             }
         }
+        
+        // Log archive results
+        if (results.archived > 0) {
+            logger.info(`Archived ${results.archived} approved requests for ${scope} in guild ${guild.id} (${type})`);
+        }
+        
+        // Log completion
+        logger.info(`Cleanup completed for ${scope} in guild ${guild.id} (${type}): ${results.expired} expired, ${results.archived} archived`);
+        
     } catch (error) {
-        logger.error(`Error during cleanup: ${error.message}`);
+        const scope = userId ? `user ${userId}` : 'all users';
+        logger.error(`Error during cleanup for ${scope} in guild ${guild.id} (${type}): ${error.message}`);
         results.errors.push(`Cleanup failed: ${error.message}`);
+    }
+
+    return results;
+}
+
+/**
+ * Run cleanup across all guilds to expire and archive LookingFor requests, aggregating results.
+ *
+ * @returns {{totalExpired: number, totalArchived: number, errors: string[]}} Totals of expired and archived requests and collected error messages.
+ */
+async function globalCleanup(client, config) {
+    const results = {
+        totalExpired: 0,
+        totalArchived: 0,
+        errors: []
+    };
+
+    let guildCount = 0; // Declare outside try block to ensure it's always in scope
+    logger.info('Starting global cleanup across all guilds');
+
+    try {
+        // Get all guilds where the bot is present
+        const guilds = client.guilds.cache.values();
+        
+        for (const guild of guilds) {
+            guildCount++;
+            try {
+                logger.info(`Processing guild ${guild.id} (${guild.name}) - ${guildCount}/${client.guilds.cache.size}`);
+                
+                // Cleanup requests for each game type
+                const gameTypes = ['LFP', 'LFT'];
+                
+                for (const type of gameTypes) {
+                    // Get all unique games for this guild and type
+                    const games = await LFRequest.distinct('game', {
+                        guildId: guild.id,
+                        type: type
+                    });
+                    
+                    if (games.length === 0) {
+                        logger.debug(`No ${type} requests found for guild ${guild.id}`);
+                        continue;
+                    }
+                    
+                    logger.debug(`Found ${games.length} games for ${type} in guild ${guild.id}: ${games.join(', ')}`);
+                    
+                    for (const game of games) {
+                        try {
+                            const { getGameChannels } = require("./lfActionLogger");
+                            const channels = getGameChannels(config, game);
+                            
+                            // Check if channels configuration exists and has publicChannelId
+                            if (!channels || !channels.publicChannelId) {
+                                logger.warn(`Channel configuration missing for game ${game} in guild ${guild.id}, skipping cleanup`);
+                                continue;
+                            }
+                            
+                            const gameResults = await cleanupRequests(guild, null, type, channels.publicChannelId, config);
+                            results.totalExpired += gameResults.expired;
+                            results.totalArchived += gameResults.archived;
+                            results.errors.push(...gameResults.errors);
+                        } catch (error) {
+                            logger.error(`Error cleaning up ${type} requests for game ${game} in guild ${guild.id}: ${error.message}`);
+                            results.errors.push(`Guild ${guild.id} (${game} ${type}): ${error.message}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                logger.error(`Error cleaning up guild ${guild.id}: ${error.message}`);
+                results.errors.push(`Guild ${guild.id}: ${error.message}`);
+            }
+        }
+    } catch (error) {
+        logger.error(`Global cleanup failed: ${error.message}`);
+        results.errors.push(`Global cleanup: ${error.message}`);
+    }
+
+    // Log final results
+    logger.info(`Global cleanup completed: ${results.totalExpired} expired, ${results.totalArchived} archived across ${guildCount} guilds`);
+    if (results.errors.length > 0) {
+        logger.warn(`Global cleanup had ${results.errors.length} errors: ${results.errors.join('; ')}`);
     }
 
     return results;
@@ -359,6 +530,10 @@ async function cleanupRequests(guild, userId, type, publicChannelId, config) {
 module.exports = {
     STATUS,
     isStatusTransitionAllowed,
+    isValidStatus,
+    normalizeStatus,
+    isActiveStatus,
+    isSoftDeletedStatus,
     getStatusColor,
     getStatusEmoji,
     isValidRequestId,
@@ -368,5 +543,6 @@ module.exports = {
     createWarningEmbed,
     softDeleteRequest,
     getRequestPreview,
-    cleanupRequests
+    cleanupRequests,
+    globalCleanup
 };

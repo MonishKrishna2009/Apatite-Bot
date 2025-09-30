@@ -35,6 +35,8 @@ const { getGameChannels } = require("../../Structure/Functions/LFSystem/lfAction
 const { checkActiveRequests } = require("../../Structure/Functions/LFSystem/activeRequest");
 const modalHandler = require("../../Structure/Functions/LFSystem/modalHandler");
 const config = require("../../Structure/Configs/config");
+const { Logger } = require("../../Structure/Functions/Logger");
+const logger = new Logger();
 
 class LFPSys extends Command {
     constructor(client) {
@@ -95,7 +97,7 @@ class LFPSys extends Command {
                     break;
             }
         } catch (error) {
-            console.error(`LFP command error: ${error.stack}`);
+            logger.error(`LFP command error: ${error.stack}`);
             return interaction.reply({
                 embeds: [createErrorEmbed("Error", "An error occurred while processing your request.")],
                 flags: MessageFlags.Ephemeral
@@ -108,12 +110,7 @@ class LFPSys extends Command {
         
         // Get game-specific channels
         const channels = getGameChannels(config, game);
-        
-        // Cleanup old requests
-        await cleanupRequests(interaction.guild, interaction.user.id, "LFP", channels.publicChannelId, config);
-        
-        // Check active request limit
-        if (await checkActiveRequests(interaction, "LFP", config)) return;
+    
 
         // Create modal based on game using modal handler
         const modal = modalHandler.createCreateModal("lfp", game);
@@ -139,9 +136,9 @@ class LFPSys extends Command {
 
         // Find request
         const request = await LFRequest.findById(requestId);
-        if (!request) {
+        if (!request || request.guildId !== interaction.guild.id) {
             return interaction.reply({
-                embeds: [createErrorEmbed("Request Not Found", "No request found with that ID.")],
+                embeds: [createErrorEmbed("Request Not Found", "No request found with that ID in this server.")],
                 flags: MessageFlags.Ephemeral
             });
         }

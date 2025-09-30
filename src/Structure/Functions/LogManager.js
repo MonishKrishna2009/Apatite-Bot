@@ -17,26 +17,29 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const { EmbedBuilder} = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, PermissionsBitField } = require('discord.js');
+const { PrivacyUtils } = require('./PrivacyUtils.js');
 
 class LogManager {
     constructor(client) {
         this.client = client;
+        this.privacyUtils = new PrivacyUtils();
     }
 
     // Get log channel for specific type from config
     getLogChannel(logType) {
         const config = require("../Configs/config.js");
+        const loggingConfig = config.logging || {};
         
         switch(logType) {
             case 'serverLog':
-                return config.serverLogChannelId
+                return loggingConfig.serverLogChannelId;
             case 'memberLog':
-                return config.memberLogChannelId
+                return loggingConfig.memberLogChannelId;
             case 'voiceLog':
-                return config.voiceLogChannelId
+                return loggingConfig.voiceLogChannelId;
             case 'messageLog':
-                return config.messageLogChannelId
+                return loggingConfig.messageLogChannelId;
             default:
                 return null;
         }
@@ -60,10 +63,45 @@ class LogManager {
     async sendLog(logType, embed, options = {}) {
         try {
             const channelId = this.getLogChannel(logType);
-            if (!channelId) return;
+            if (!channelId) {
+                console.warn(`No channel configured for log type: ${logType}`);
+                return;
+            }
 
             const channel = await this.client.channels.fetch(channelId);
-            if (!channel) return;
+            if (!channel) {
+                console.warn(`Channel ${channelId} not found for log type: ${logType}`);
+                return;
+            }
+
+            // Check if channel is a guild text channel
+            if (!channel.isTextBased() || !channel.guild) {
+                console.warn(`Channel ${channelId} is not a guild text channel for log type: ${logType}`);
+                return;
+            }
+
+            // Fetch bot's guild member and check permissions
+            const botMember = await channel.guild.members.fetch(this.client.user.id).catch(() => null);
+            if (!botMember) {
+                console.warn(`Could not fetch bot member in guild ${channel.guild.id} for log type: ${logType}`);
+                return;
+            }
+
+            // Check required permissions
+            const requiredPermissions = [
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.EmbedLinks
+            ];
+
+            const missingPermissions = requiredPermissions.filter(permission => 
+                !botMember.permissionsIn(channel).has(permission)
+            );
+
+            if (missingPermissions.length > 0) {
+                console.warn(`Missing permissions in channel ${channelId} for log type: ${logType}. Missing: ${missingPermissions.join(', ')}`);
+                return;
+            }
 
             await channel.send({ embeds: [embed], ...options });
         } catch (error) {
@@ -74,6 +112,11 @@ class LogManager {
     // Get audit log entry for actions
     async getAuditLogEntry(guild, action, targetId = null) {
         try {
+            // Check if bot has audit log permissions
+            if (!guild.members.me?.permissions?.has(PermissionFlagsBits.ViewAuditLog)) {
+                return null;
+            }
+
             const auditLogs = await guild.fetchAuditLogs({
                 type: action,
                 limit: 1
@@ -93,6 +136,131 @@ class LogManager {
             console.error('Failed to fetch audit log:', error);
             return null;
         }
+    }
+
+    // Privacy-aware message content processing
+    processMessageContent(content, options = {}) {
+        return this.privacyUtils.processMessageContent(content, options);
+    }
+
+    // Create privacy-aware embed for message logs
+    createMessageLogEmbed(type, color, title, messageData, options = {}) {
+        const {
+            includeContent = false,
+            channel = null,
+            author = null,
+            messageId = null
+        } = options;
+
+        let description = `>>> **Author**: ${author ? `${author.tag} (\`${author.id}\`)` : 'Unknown'}\n`;
+        
+        if (channel) {
+            description += `**Channel**: ${channel} (\`${channel.id}\`)\n`;
+        }
+        
+        if (messageId) {
+            description += `**Message ID**: \`${messageId}\`\n\n`;
+        }
+
+        // Process message content based on privacy settings
+        if (includeContent && messageData?.content) {
+            const processedContent = this.processMessageContent(messageData.content, {
+                fullContentLogging: true // Allow content for message logs when explicitly requested
+            });
+            
+            description += `**Content**:\n${processedContent.content}`;
+            
+            // Add privacy notice if content was processed
+            if (processedContent.redacted || processedContent.sanitized) {
+                description += `\n\n> *Privacy Notice: ${processedContent.reason}*`;
+            }
+        } else {
+            description += `**Content**: [CONTENT_NOT_LOGGED_FOR_PRIVACY]`;
+        }
+
+        return this.createLogEmbed(type, color, title, description);
+    }
+
+    // Send privacy-aware log
+    async sendPrivacyLog(logType, embed, options = {}) {
+        try {
+            // Check if logging is enabled
+            const config = require("../Configs/config.js");
+            const loggingConfig = config.logging || {};
+            
+            if (!loggingConfig.enabled) {
+                return;
+            }
+
+            // Add privacy footer to embed
+            if (loggingConfig.piiRedaction || loggingConfig.contentSanitization) {
+                embed.setFooter({
+                    text: `${embed.data.footer?.text || ''} • Privacy controls active`,
+                    iconURL: embed.data.footer?.iconURL
+                });
+            }
+
+            await this.sendLog(logType, embed, options);
+        } catch (error) {
+            console.error(`Failed to send privacy log:`, error);
+        }
+    }
+
+    // Check if content should be logged based on privacy settings
+    shouldLogContent(channelId, channelType = 'text') {
+        return this.privacyUtils.shouldLogContent(channelId, channelType);
+    }
+
+    // Get retention information for logging
+    getRetentionInfo(dataType) {
+        const retentionDate = this.privacyUtils.getRetentionDate(dataType);
+        const config = require("../Configs/config.js");
+        const retentionDays = config.logging?.retentionDays?.[dataType] || 365;
+        
+        return {
+            retentionDate,
+            retentionDays,
+            dataType
+        };
+    }
+
+    // Create analytics-safe log data
+    createAnalyticsData(eventData, options = {}) {
+        const {
+            anonymize = true,
+            aggregateOnly = true
+        } = options;
+
+        if (!anonymize) {
+            return eventData;
+        }
+
+        const analyticsData = { ...eventData };
+
+        // Remove or anonymize user-specific data
+        if (analyticsData.user) {
+            analyticsData.user = this.privacyUtils.anonymizeUserData(analyticsData.user, true);
+        }
+
+        // Remove personal content
+        delete analyticsData.content;
+        delete analyticsData.message;
+
+        // Keep only aggregate-appropriate data
+        if (aggregateOnly) {
+            const allowedFields = ['eventType', 'timestamp', 'channelType', 'guildId'];
+            const filtered = {};
+            
+            for (const field of allowedFields) {
+                if (analyticsData[field] !== undefined) {
+                    filtered[field] = analyticsData[field];
+                }
+            }
+            
+            return filtered;
+        }
+
+        return analyticsData;
     }
 
 }

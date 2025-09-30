@@ -22,14 +22,16 @@ const { Logger } = require("../Logger");
 const logger = new Logger();
 
 /**
- * Logs LF actions for accountability
- * @param {Object} client - Discord client
- * @param {Object} config - Configuration object
- * @param {string} action - Action performed
- * @param {Object} request - LFRequest document
- * @param {Object} user - User who performed the action
- * @param {Object} staff - Staff member (if applicable)
- * @param {string} reason - Reason for action (if applicable)
+ * Send a formatted log embed to the configured LF action log channel describing a leaderboard/request-related action.
+ *
+ * When a `request` is provided the embed includes request metadata and a short preview of up to three content fields.
+ * When `request` is null the embed contains a summary for bulk or system-level actions and includes optional staff and reason.
+ *
+ * @param {string} action - Action identifier (e.g., "create", "approve", "delete", "legacy_clean", "bulk_cleanup", "system_action").
+ * @param {Object|null} request - LFRequest document to log; pass `null` for bulk/system actions.
+ * @param {Object} user - User who performed the action (object containing at least `id` and `tag`).
+ * @param {Object|null} [staff=null] - Staff member involved, if applicable (object containing at least `id` and `tag`).
+ * @param {string|null} [reason=null] - Optional reason or note describing the action.
  */
 async function logLFAction(client, config, action, request, user, staff = null, reason = null) {
     try {
@@ -54,7 +56,10 @@ async function logLFAction(client, config, action, request, user, staff = null, 
             'resend': Colors.Purple,
             'delete': Colors.DarkRed,
             'archive': Colors.Grey,
-            'expire': Colors.Yellow
+            'expire': Colors.Yellow,
+            'legacy_clean': Colors.Red,
+            'bulk_cleanup': Colors.Orange,
+            'system_action': Colors.Blue
         };
 
         const actionEmojis = {
@@ -66,14 +71,20 @@ async function logLFAction(client, config, action, request, user, staff = null, 
             'resend': '🔄',
             'delete': '🗑️',
             'archive': '📦',
-            'expire': '⏰'
+            'expire': '⏰',
+            'legacy_clean': '🧹',
+            'bulk_cleanup': '🧽',
+            'system_action': '⚙️'
         };
 
         const embed = new EmbedBuilder()
             .setTitle(`${actionEmojis[action] || '📋'} LF Action: ${action.toUpperCase()}`)
             .setColor(actionColors[action] || Colors.Grey)
-            .setTimestamp()
-            .setDescription(
+            .setTimestamp();
+
+        // Handle cases where request is null (e.g., bulk operations, system actions)
+        if (request) {
+            embed.setDescription(
                 `>>> **Request ID:** \`${request._id}\`\n` +
                 `**Type:** ${request.type}\n` +
                 `**Game:** ${request.game}\n` +
@@ -84,18 +95,37 @@ async function logLFAction(client, config, action, request, user, staff = null, 
                 (reason ? `\n**Reason:** ${reason}` : '')
             );
 
-        // Add request content preview
-        const contentPreview = Object.entries(request.content || {})
-            .slice(0, 3) // Show first 3 fields
-            .map(([key, value]) => `**${key}**: ${value}`)
-            .join('\n');
+            // Add request content preview
+            const contentPreview = Object.entries(request.content || {})
+                .slice(0, 3) // Show first 3 fields
+                .map(([key, value]) => `**${key}**: ${value}`)
+                .join('\n');
 
-        if (contentPreview) {
-            embed.addFields({ 
-                name: '📋 Request Details', 
-                value: `>>> ${contentPreview}`, 
-                inline: false 
-            });
+            if (contentPreview) {
+                // Ensure content preview doesn't exceed Discord's 1024 character limit
+                const prefix = '>>> ';
+                const ellipsis = '…';
+                const maxContentLength = 1024 - prefix.length - ellipsis.length; // 1019
+                
+                let finalPreview = contentPreview;
+                if (finalPreview.length > maxContentLength) {
+                    finalPreview = finalPreview.substring(0, Math.max(0, maxContentLength)) + ellipsis;
+                }
+                
+                embed.addFields({ 
+                    name: '📋 Request Details', 
+                    value: `${prefix}${finalPreview}`, 
+                    inline: false 
+                });
+            }
+        } else {
+            // For actions without specific request (bulk operations, system actions)
+            embed.setDescription(
+                `>>> **Action:** ${action.toUpperCase()}\n` +
+                `**User:** <@${user.id}> (${user.tag})\n` +
+                (staff ? `**Staff Member:** <@${staff.id}> (${staff.tag})\n` : '') +
+                (reason ? `**Reason:** ${reason}` : '')
+            );
         }
 
         await logChannel.send({ embeds: [embed] });

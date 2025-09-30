@@ -7,8 +7,6 @@
 
 ⚡ Discord bot for esports matchmaking, community management, and moderation.
 
-A Discord bot built with [discord.js v14](https://discord.js.org) and MongoDB, designed for ticketing, player/team matchmaking (LFP/LFT), logging, and moderation tools. Perfect for gaming communities and esports servers.
-
 > [!IMPORTANT]
 > This project is actively maintained and production-ready. The LFP/LFT system is fully implemented and stable.
 > Here is the [development roadmap](./GitAssets/docs/Development-roadmap.md) for this project!
@@ -29,6 +27,10 @@ A feature-rich **Discord bot** built with [discord.js v14](https://discord.js.or
 - [✨ Star History](#-star-history)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
+
+
+> [!NOTE]
+> Want to try the bot out? You can join this server here: [Apatite Esports](https://apatite.club/discord)
 
 
 ## ✨ Features 
